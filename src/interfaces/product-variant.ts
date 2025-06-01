@@ -1,4 +1,4 @@
-import type { Categories } from "./categories";
+import type { SubCategories } from "./categories";
 
 export interface ProductVariant {
   variant_id: string;
@@ -8,7 +8,7 @@ export interface ProductVariant {
   description: string;
   mrp: number;
   price: number;
-  categories?: Categories[];
+  categories?: SubCategories[];
   image: string[];
   brand_name: string;
   out_of_stock: boolean;
