@@ -11,6 +11,7 @@ import CustomerPage from "@/pages/Customers";
 import CustomerDetailSection from "@/pages/Customers/CustomerDetailSection";
 import OrderDetailSection from "@/pages/Orders/OrderDetailSection";
 import ConfigurationSection from "@/pages/Configurations";
+import OffersPage from "@/pages/Configurations/OffersPage";
 
 const AppRoutes = () => (
   <Routes>
@@ -23,7 +24,7 @@ const AppRoutes = () => (
         </DashboardLayout>
       }
     />
-  <Route
+    <Route
       path="/OrderDetailSection"
       element={
         <DashboardLayout>
@@ -31,7 +32,7 @@ const AppRoutes = () => (
         </DashboardLayout>
       }
     />
-    
+
     <Route
       path="/products"
       element={
@@ -57,7 +58,7 @@ const AppRoutes = () => (
       }
     />
 
-        <Route
+    <Route
       path="/categoryForm"
       element={
         <DashboardLayout>
@@ -74,7 +75,7 @@ const AppRoutes = () => (
       }
     />
 
-        <Route
+    <Route
       path="/customerDetails"
       element={
         <DashboardLayout>
@@ -87,6 +88,14 @@ const AppRoutes = () => (
       element={
         <DashboardLayout>
           <ConfigurationSection />
+        </DashboardLayout>
+      }
+    />
+    <Route
+      path="/offers"
+      element={
+        <DashboardLayout>
+          <OffersPage />
         </DashboardLayout>
       }
     />

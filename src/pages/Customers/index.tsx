@@ -1,5 +1,4 @@
 import type { FC } from "react";
-import ProductListSection from "@/components/products/ProductListSection";
 import CustomerListSection from "@/components/customers/CustomerListSection";
 
 

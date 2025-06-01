@@ -154,7 +154,7 @@ const ProductVariantsForm = () => {
             }}
           />
           <h2 className="text-2xl font-semibold text-gray-800">
-            Product Variants
+            Add Product
           </h2>
         </div>
 

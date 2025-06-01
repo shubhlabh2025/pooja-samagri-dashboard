@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { BarChart2, Users, TrendingUp, ShoppingCart, SquareX } from "lucide-react";
+import { TrendingUp, ShoppingCart, SquareX } from "lucide-react";
 import OrderAcceptReject from "@/components/Order/OrderAcceptReject";
 import OrderListSection from "@/components/Order/OrderListSection";
 

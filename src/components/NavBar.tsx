@@ -1,6 +1,6 @@
 // components/Navbar/Navbar.tsx
 
-import { Bell, Mail, Settings } from "lucide-react";
+import { Bell, Mail } from "lucide-react";
 
 const Navbar = () => (
   <header className="bg-white shadow px-6 py-4 flex justify-between items-center">

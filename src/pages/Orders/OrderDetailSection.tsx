@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {  } from "react";
 import { useNavigate } from "react-router";
 
 interface OrderItem {
@@ -26,7 +26,7 @@ const OrderDetailSection: React.FC = () => {
   ];
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const [note, setNote] = useState("");
+//   const [note, setNote] = useState("");
 
   const navigate = useNavigate()
 

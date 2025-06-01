@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import userAvatar from "../../assets/user.png";
 import type { Product } from "@/interfaces/product";
-import { Delete, Trash2 } from "lucide-react";
+import {  Trash2 } from "lucide-react";
+import { Link } from "react-router";
 const mockUsers: Product[] = [
   {
     id: "1",
@@ -275,41 +276,42 @@ const ProductListSection: React.FC = () => {
         {displayedProducts.map((product) => {
           const variant = product.product_variants[0];
           return (
-            <div
-              key={product.id}
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3"
-            >
-              <div className="flex items-center gap-4">
-                <img
-                  src={variant.image[0] || userAvatar}
-                  alt={variant.name}
-                  className="w-10 h-10 rounded-full"
-                />
-                <div>
-                  <div className="font-medium text-gray-900 text-sm">
-                    {variant.name}
-                  </div>
-                  <div className="text-xs text-black-500 truncate max-w-[200px]">
-                    {variant.description}
+            <Link to="/productForm">
+              <div
+                key={product.id}
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3"
+              >
+                <div className="flex items-center gap-4">
+                  <img
+                    src={variant.image[0] || userAvatar}
+                    alt={variant.name}
+                    className="w-10 h-10 rounded-full"
+                  />
+                  <div>
+                    <div className="font-medium text-gray-900 text-sm">
+                      {variant.name}
+                    </div>
+                    <div className="text-xs text-black-500 truncate max-w-[200px]">
+                      {variant.description}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap sm:flex-row items-center justify-end gap-2 sm:gap-6 w-full sm:w-auto">
-                <div className="text-sm text-black-500 font-semibold">
-                  Rs. {variant.price.toFixed(2)}
-                </div>
-                <div className="flex gap-2">
-                  <Trash2 />
+                <div className="flex flex-wrap sm:flex-row items-center justify-end gap-2 sm:gap-6 w-full sm:w-auto">
+                  <div className="text-sm text-black-500 font-semibold">
+                    Rs. {variant.price.toFixed(2)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Trash2 />
+                  </div>
                 </div>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
     </div>
   );
 };
-
 
 export default ProductListSection;

@@ -1,7 +1,6 @@
-import React from "react";
-
+import React, { useState } from "react";
 import userAvatar from "../../assets/user.png";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 interface OrderData {
   id: number;
@@ -9,6 +8,7 @@ interface OrderData {
   price: number;
   avatar: string;
   date: string;
+  status: string;
 }
 
 const mockUsers: OrderData[] = [
@@ -18,6 +18,7 @@ const mockUsers: OrderData[] = [
     price: 249.99,
     avatar: "./user.png",
     date: "11 MAY 12:56",
+    status: "pending",
   },
   {
     id: 2,
@@ -25,6 +26,7 @@ const mockUsers: OrderData[] = [
     price: 149.5,
     avatar: "/avatars/male-1.png",
     date: "11 MAY 10:35",
+    status: "completed",
   },
   {
     id: 3,
@@ -32,6 +34,7 @@ const mockUsers: OrderData[] = [
     price: 399.0,
     avatar: "/avatars/female-2.png",
     date: "9 MAY 17:38",
+    status: "Payment Pending",
   },
   {
     id: 4,
@@ -39,6 +42,7 @@ const mockUsers: OrderData[] = [
     price: 89.75,
     avatar: "/avatars/female-1.png",
     date: "19 MAY 12:56",
+    status: "pending",
   },
   {
     id: 5,
@@ -46,27 +50,59 @@ const mockUsers: OrderData[] = [
     price: 520.0,
     avatar: "/avatars/male-1.png",
     date: "21 JULY 12:56",
+    status: "pending",
   },
 ];
 
+const statusOptions = ["All","pending", "completed", "Payment Pending",];
+
 const OrderListSection: React.FC = () => {
+//   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+
+//   const toggleStatus = (status: string) => {
+//     setSelectedStatuses((prev) =>
+//       prev.includes(status)
+//         ? prev.filter((s) => s !== status)
+//         : [...prev, status]
+//     );
+//   };
+
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+
+  const filteredOrders =
+    statusFilter === "All"
+      ? mockUsers
+      : mockUsers.filter((order) => order.status === statusFilter);
+
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="border-b px-6 py-4 text-lg border-l-4 border-blue-500 flex items-center justify-between">
-        <span className="font-semibold text-gray-800">
-        Orders List
-        </span>
-        <span className="text-sm text-blue-600 hover:underline cursor-pointer">
-          View All
-        </span>
-      </div>
-      <div className="divide-y">
-        {mockUsers.map((user) => (
-          <Link to="/OrderDetailSection">
-            <div
-              key={user.id}
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3"
+      <div className="border-b px-6 py-4 text-lg border-l-4 border-blue-500">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <span className="font-semibold text-gray-800">Orders List</span>
+          <div className="flex items-center gap-2">
+            <label htmlFor="status" className="text-sm text-gray-600">
+              Filter:
+            </label>
+            <select
+              id="status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none"
             >
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="divide-y">
+        {filteredOrders.map((user) => (
+          <Link to="/OrderDetailSection" key={user.id}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3">
               <div className="flex items-center gap-4">
                 <img
                   src={userAvatar}
@@ -80,6 +116,9 @@ const OrderListSection: React.FC = () => {
                   <div className="text-xs text-black-500 truncate max-w-[200px]">
                     {user.date}
                   </div>
+                  <span className="bg-black text-xs px-2 py-0.5 rounded font-semibold text-white">
+                    {user.status}
+                  </span>
                 </div>
               </div>
 

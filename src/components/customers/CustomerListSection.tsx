@@ -1,5 +1,4 @@
 import type { Category } from "@/interfaces/category";
-import { Trash2 } from "lucide-react";
 import React, { useState } from "react";
 import userAvatar from "../../assets/user.png";
 import { Link } from "react-router";

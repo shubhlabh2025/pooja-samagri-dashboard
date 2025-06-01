@@ -1,7 +1,14 @@
 import React, { useState } from "react";
 import userAvatar from "../../assets/user.png";
-import { Trash2 } from "lucide-react";
+import { ChevronDown, Trash2 } from "lucide-react";
 import type { Category } from "@/interfaces/category";
+import Modal from "../Common/Modal";
+import CategoryForm from "@/pages/Category/CategoryForm";
+
+interface CategoryListSectionProps {
+  onItemClick?: () => void;
+}
+
 const mockCategories: Category[] = [
   {
     id: 1,
@@ -64,12 +71,31 @@ const mockCategories: Category[] = [
       "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
   },
 ];
-const CategoryListSection: React.FC = () => {
+
+// mock subcategories per category
+const mockSubCategories: { [key: number]: string[] } = {
+  1: ["Round Neck", "V-Neck"],
+  2: ["Skinny", "Straight Fit"],
+  3: ["Backpacks", "Totes"],
+};
+
+const CategoryListSection: React.FC<CategoryListSectionProps> = ({
+  onItemClick,
+}) => {
   const [showAll, setShowAll] = useState(false);
+  const [showSubCateory, setSubCategoryModal] = useState(false);
+
+  const [expandedCategoryId, setExpandedCategoryId] = useState<number | null>(
+    null
+  );
 
   const displayedCategories = showAll
     ? mockCategories
     : mockCategories.slice(0, 6);
+
+  const toggleSubList = (id: number) => {
+    setExpandedCategoryId((prev) => (prev === id ? null : id));
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -82,30 +108,82 @@ const CategoryListSection: React.FC = () => {
           {showAll ? "View Less" : "View All"}
         </span>
       </div>
+
       <div className="divide-y">
         {displayedCategories.map((category) => (
-          <div
-            key={category.id}
-            className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3"
-          >
-            <div className="flex items-center gap-4">
-              <img
-                src={category.image || userAvatar}
-                alt={category.name}
-                className="w-10 h-10 rounded-full"
-              />
-              <div>
-                <div className="font-medium text-gray-900 text-sm">
-                  {category.name}
+          <div key={category.id} className="group relative">
+            <div
+              onClick={onItemClick}
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3 cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <img
+                  src={category.image || userAvatar}
+                  alt={category.name}
+                  className="w-10 h-10 rounded-full"
+                />
+                <div>
+                  <div className="font-medium text-gray-900 text-sm">
+                    {category.name}
+                  </div>
                 </div>
+              </div>
+
+              <div className="flex flex-wrap sm:flex-row items-center justify-end gap-2 sm:gap-6 w-full sm:w-auto">
+                <Trash2 className="text-gray-500" />
+                <ChevronDown
+                  className="text-gray-500 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSubList(category.id);
+                  }}
+                />
               </div>
             </div>
 
-            <div className="flex flex-wrap sm:flex-row items-center justify-end gap-2 sm:gap-6 w-full sm:w-auto">
-              <div className="flex gap-2">
-                <Trash2 />
+            {/* Expanded Subcategory List */}
+            {expandedCategoryId === category.id && (
+              <div className="ml-14 mr-14 mt-3 space-y-2">
+                {(mockSubCategories[category.id] || []).map((sub, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between px-4 py-2 rounded bg-gray-50 hover:bg-gray-100 border"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={userAvatar} // Or you can store an image URL in sub and use it here
+                        alt={sub}
+                        className="w-8 h-8 rounded-full"
+                      />
+                      <span className="text-sm font-medium text-gray-800">
+                        {sub}
+                      </span>
+                    </div>
+                    {/* Optional delete or edit icons can be added here */}
+                  </div>
+                ))}
+
+                {/* Add New Subcategory Button */}
+                <div className="w-full flex justify-center my-6">
+                  <div
+                    className="flex items-center gap-3 cursor-pointer group"
+                    onClick={() => setSubCategoryModal(true)}
+                  >
+                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 group-hover:bg-blue-200">
+                      <span className="text-blue-600 text-lg font-bold">+</span>
+                    </div>
+                    <span className="text-sm text-blue-600 group-hover:underline">
+                      Add Subcategory
+                    </span>
+                  </div>
+                </div>
+                {showSubCateory && (
+                  <Modal onClose={() => setSubCategoryModal(false)}>
+                    <CategoryForm />
+                  </Modal>
+                )}
               </div>
-            </div>
+            )}
           </div>
         ))}
       </div>
