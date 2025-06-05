@@ -2,9 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { Trash2, Search, X, ChevronDown, Edit2 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
 import { fetchCategories, deleteCategory } from "@/slices/categorySlice";
+import {
+  fetchSubCategories,
+  deleteSubCategory,
+} from "@/slices/subCategorySlice";
 import Modal from "../Common/Modal";
 import CategoryForm from "@/pages/Category/CategoryForm";
 import SubCategoryForm from "@/pages/Category/SubCategoryForm";
+import DismissDialog from "../Common/DismissDialog";
 
 const PAGE_SIZE = 6;
 const DEBOUNCE_MS = 200;
@@ -14,13 +19,18 @@ const CategoryListSection: React.FC = () => {
   const { categories, status, error, pagination } = useAppSelector(
     (state) => state.categories
   );
+  const subCategoryState = useAppSelector((state) => state.subCategories);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [query, setQuery] = useState("");
+  const [showDialog, setShowDialog] = useState(false);
+  const [showSubDialog, setShowSubDialog] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Edit
+  // Edit Modal
   const [editCategory, setEditCategory] = useState<any>(null);
   const [showCategoryModal, setCategoryModal] = useState(false);
 
@@ -29,6 +39,7 @@ const CategoryListSection: React.FC = () => {
     null
   );
   const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
+  const [editSubCategory, setEditSubCategory] = useState<any>(null);
 
   // Debounce search
   useEffect(() => {
@@ -46,6 +57,13 @@ const CategoryListSection: React.FC = () => {
     );
   }, [dispatch, currentPage, query]);
 
+  // Fetch subcategories on expand
+  useEffect(() => {
+    if (expandedCategoryId) {
+      dispatch(fetchSubCategories({ parent_id: expandedCategoryId }));
+    }
+  }, [expandedCategoryId, dispatch]);
+
   // Pagination logic
   const totalPages = pagination?.totalPages || 1;
   const MAX_BUTTONS = 5;
@@ -54,9 +72,17 @@ const CategoryListSection: React.FC = () => {
   if (endPage - startPage < MAX_BUTTONS - 1) {
     startPage = Math.max(1, endPage - MAX_BUTTONS + 1);
   }
+
+  const handleDelete = () => {
+    // Do the delete logic here
+  };
   const pageButtons = [];
   for (let i = startPage; i <= endPage; i++) pageButtons.push(i);
 
+  // Get subcategories for expanded category
+  const subCategories = subCategoryState.subCategories.filter(
+    (s) => s.parent_id === expandedCategoryId
+  );
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       {/* Top Bar */}
@@ -151,12 +177,24 @@ const CategoryListSection: React.FC = () => {
                   <Edit2 />
                 </button>
                 <button
-                  onClick={() => dispatch(deleteCategory(category.id))}
                   className="text-red-600 hover:text-red-800 transition"
-                  title="Delete Category"
+                  onClick={() => setShowDialog(true)}
                 >
+                  {" "}
                   <Trash2 />
                 </button>
+                <DismissDialog
+                  open={showDialog}
+                  title="Delete Category"
+                  message="Are you sure you want to delete this Category?."
+                  confirmLabel="Delete"
+                  cancelLabel="Cancel"
+                  onConfirm={() => {
+                    dispatch(deleteCategory(category.id));
+                    setShowDialog(false);
+                  }}
+                  onCancel={() => setShowDialog(false)}
+                />
                 <ChevronDown
                   className="text-gray-500 cursor-pointer"
                   onClick={() =>
@@ -170,10 +208,76 @@ const CategoryListSection: React.FC = () => {
             {/* Expanded subcategory list/modal */}
             {expandedCategoryId === category.id && (
               <div className="ml-14 mr-14 mt-3 space-y-2">
+                {/* Subcategory list */}
+                {subCategoryState.status === "loading" ? (
+                  <div className="px-4 py-2 text-gray-400">Loading...</div>
+                ) : (
+                  <>
+                    {subCategories.length > 0 ? (
+                      subCategories.map((sub) => (
+                        <div
+                          key={sub.id}
+                          className="flex items-center justify-between px-4 py-2 rounded bg-gray-50 hover:bg-gray-100 border"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={sub.image}
+                              alt={sub.name}
+                              className="w-8 h-8 rounded-full"
+                            />
+                            <span className="text-sm font-medium text-gray-800">
+                              {sub.name}
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              className="text-blue-600 hover:text-blue-800"
+                              title="Edit Subcategory"
+                              onClick={() => {
+                                setEditSubCategory(sub);
+                                setShowSubCategoryModal(true);
+                              }}
+                            >
+                              <Edit2 size={16} />
+                            </button>
+
+                            <button
+                              className="text-red-600 hover:text-red-800 transition"
+                              onClick={() => setShowSubDialog(true)}
+                            >
+                              {" "}
+                              <Trash2 />
+                            </button>
+                            <DismissDialog
+                              open={showSubDialog}
+                              title="Delete Subcategory"
+                              message="Are you sure you want to delete this Subcategory?"
+                              confirmLabel="Delete"
+                              cancelLabel="Cancel"
+                              onConfirm={() => {
+                                dispatch(deleteSubCategory(sub.id));
+                                setShowSubDialog(false);
+                              }}
+                              onCancel={() => setShowSubDialog(false)}
+                            />
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-gray-500 text-sm">
+                        No subcategories yet.
+                      </div>
+                    )}
+                  </>
+                )}
+                {/* Add New Subcategory Button */}
                 <div className="w-full flex justify-center my-6">
                   <div
                     className="flex items-center gap-3 cursor-pointer group"
-                    onClick={() => setShowSubCategoryModal(true)}
+                    onClick={() => {
+                      setEditSubCategory(null);
+                      setShowSubCategoryModal(true);
+                    }}
                   >
                     <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 group-hover:bg-blue-200">
                       <span className="text-blue-600 text-lg font-bold">+</span>
@@ -184,8 +288,21 @@ const CategoryListSection: React.FC = () => {
                   </div>
                 </div>
                 {showSubCategoryModal && (
-                  <Modal onClose={() => setShowSubCategoryModal(false)}>
-                    <SubCategoryForm parentId={category.id} />
+                  <Modal
+                    onClose={() => {
+                      setShowSubCategoryModal(false);
+                      setEditSubCategory(null);
+                    }}
+                  >
+                    <SubCategoryForm
+                      parentId={category.id}
+                      initialData={editSubCategory}
+                      subCategoryId={editSubCategory?.id}
+                      onClose={() => {
+                        setShowSubCategoryModal(false);
+                        setEditSubCategory(null);
+                      }}
+                    />
                   </Modal>
                 )}
               </div>

@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "../../hooks/reduxHooks";
 import { fetchProducts, deleteProduct } from "../../slices/productSlice";
 import { ProductSkeleton } from "../loadingSkeletons/productSkeleton";
 import { ErrorMessage } from "../Common/ErrorMessage";
+import DismissDialog from "../Common/DismissDialog";
 
 const PAGE_SIZE = 10;
 const DEBOUNCE_MS = 200;
@@ -20,6 +21,7 @@ const ProductListSection: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showDialog, setShowDialog] = useState(false);
 
   // Debounce effect for searchText -> query
   useEffect(() => {
@@ -163,17 +165,26 @@ const ProductListSection: React.FC = () => {
                 <div className="text-sm text-black-500 font-semibold">
                   Rs. {variant.price.toFixed(2)}
                 </div>
+
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    dispatch(deleteProduct(product.id));
-                  }}
                   className="text-red-600 hover:text-red-800 transition"
-                  title="Delete Product"
+                  onClick={() => setShowDialog(true)}
                 >
+                  {" "}
                   <Trash2 />
                 </button>
+                <DismissDialog
+                  open={showDialog}
+                  title="Delete Product"
+                  message="Are you sure you want to delete this Product?."
+                  confirmLabel="Delete"
+                  cancelLabel="Cancel"
+                  onConfirm={() => {
+                    dispatch(deleteProduct(product.id));
+                    setShowDialog(false);
+                  }}
+                  onCancel={() => setShowDialog(false)}
+                />
               </div>
             </div>
           );
