@@ -13,13 +13,21 @@ type CategoryFormData = z.infer<typeof categorySchema>;
 
 const defaultCategory: CategoryFormData = { name: "", image: "" };
 
-const CategoryForm = ({ initialData, categoryId, onClose }: {
-  initialData?: CategoryFormData,
-  categoryId?: string,
-  onClose?: () => void,
+const CategoryForm = ({
+  initialData,
+  categoryId,
+  onClose,
+}: {
+  initialData?: CategoryFormData;
+  categoryId?: string;
+  onClose?: () => void;
 }) => {
-  const [form, setForm] = useState<CategoryFormData>(initialData || defaultCategory);
-  const [errors, setErrors] = useState<Partial<Record<keyof CategoryFormData, string>>>({});
+  const [form, setForm] = useState<CategoryFormData>(
+    initialData || defaultCategory
+  );
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof CategoryFormData, string>>
+  >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useAppDispatch();
 
@@ -51,12 +59,19 @@ const CategoryForm = ({ initialData, categoryId, onClose }: {
     if (!validate()) return;
     setIsSubmitting(true);
     try {
+      let actionResult;
       if (categoryId) {
-        await dispatch(updateCategory({ id: categoryId, updates: form }));
+        actionResult = await dispatch(
+          updateCategory({ id: categoryId, updates: form })
+        );
       } else {
-        await dispatch(createCategory(form));
+        actionResult = await dispatch(createCategory(form));
       }
-      onClose?.();
+
+      // Only close modal if action was successful
+      if (!("error" in actionResult)) {
+        onClose?.();
+      }
     } catch (err) {
       alert("Error saving category.");
     } finally {
@@ -65,20 +80,45 @@ const CategoryForm = ({ initialData, categoryId, onClose }: {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Input label="Name" value={form.name} error={errors.name} onChange={(val) => updateField("name", val)} />
-      <ImageInputWithURLAssetToggle
-        label="Image"
-        value={[form.image]}
-        error={errors.image}
-        onChange={(val) => updateField("image", val[0] || "")}
-      />
-      <div className="text-right">
-        <button type="submit" disabled={isSubmitting} className="bg-blue-600 text-white px-6 py-2 rounded-md">
-          {isSubmitting ? "Saving..." : (categoryId ? "Update" : "Create")}
-        </button>
-      </div>
-    </form>
+    <div className="max-w-4xl mx-auto mt-4">
+      <h2 className="text-xl font-semibold text-gray-800 ml-6">
+        {categoryId ? "Update Categories" : "Create Categories"}
+      </h2>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-8 bg-white shadow-md rounded-lg p-8"
+      >
+        <div className="flex flex-col gap-6">
+          <Input
+            label="Name"
+            value={form.name}
+            error={errors.name}
+            onChange={(val) => updateField("name", val)}
+          />
+          <ImageInputWithURLAssetToggle
+            label="Image"
+            value={[form.image]}
+            error={errors.image}
+            onChange={(val) => updateField("image", val[0] || "")}
+          />
+        </div>
+        <div className="text-right mt-4">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isSubmitting
+              ? categoryId
+                ? "Updating..."
+                : "Creating..."
+              : categoryId
+              ? "Update"
+              : "Create"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

@@ -1,30 +1,36 @@
-// src/components/Category/CategoryListSection.tsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Trash2, Search, X, ChevronDown, Edit2 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
 import { fetchCategories, deleteCategory } from "@/slices/categorySlice";
-import { Trash2, Search, X, ChevronDown } from "lucide-react";
-import userAvatar from "../../assets/user.png";
 import Modal from "../Common/Modal";
+import CategoryForm from "@/pages/Category/CategoryForm";
 import SubCategoryForm from "@/pages/Category/SubCategoryForm";
 
 const PAGE_SIZE = 6;
 const DEBOUNCE_MS = 200;
 
-const CategoryListSection: React.FC<{ onItemClick?: () => void }> = ({
-  onItemClick,
-}) => {
+const CategoryListSection: React.FC = () => {
   const dispatch = useAppDispatch();
   const { categories, status, error, pagination } = useAppSelector(
     (state) => state.categories
   );
-
+  const [currentPage, setCurrentPage] = useState(1);
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [query, setQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Debounce search input
+  // Edit
+  const [editCategory, setEditCategory] = useState<any>(null);
+  const [showCategoryModal, setCategoryModal] = useState(false);
+
+  // Subcategory modal
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(
+    null
+  );
+  const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
+
+  // Debounce search
   useEffect(() => {
     const handler = setTimeout(() => {
       setQuery(searchText.trim());
@@ -33,17 +39,14 @@ const CategoryListSection: React.FC<{ onItemClick?: () => void }> = ({
     return () => clearTimeout(handler);
   }, [searchText]);
 
-  // Fetch categories on page or query change
+  // Fetch categories
   useEffect(() => {
     dispatch(
       fetchCategories({ page: currentPage, pageSize: PAGE_SIZE, q: query })
     );
   }, [dispatch, currentPage, query]);
 
-  useEffect(() => {
-    if (showSearch && inputRef.current) inputRef.current.focus();
-  }, [showSearch]);
-
+  // Pagination logic
   const totalPages = pagination?.totalPages || 1;
   const MAX_BUTTONS = 5;
   let startPage = Math.max(1, currentPage - Math.floor(MAX_BUTTONS / 2));
@@ -53,11 +56,6 @@ const CategoryListSection: React.FC<{ onItemClick?: () => void }> = ({
   }
   const pageButtons = [];
   for (let i = startPage; i <= endPage; i++) pageButtons.push(i);
-
-  // Delete category
-  const handleDelete = (categoryId: string) => {
-    dispatch(deleteCategory(categoryId));
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -69,7 +67,6 @@ const CategoryListSection: React.FC<{ onItemClick?: () => void }> = ({
             <button
               onClick={() => setShowSearch(true)}
               className="p-2 rounded bg-gray-100 hover:bg-blue-100 text-blue-600"
-              title="Search Categories"
             >
               <Search className="w-5 h-5" />
             </button>
@@ -129,13 +126,10 @@ const CategoryListSection: React.FC<{ onItemClick?: () => void }> = ({
       <div className="divide-y">
         {categories.map((category) => (
           <div key={category.id} className="group relative">
-            <div
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3 cursor-pointer"
-              onClick={onItemClick}
-            >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3 cursor-pointer">
               <div className="flex items-center gap-4">
                 <img
-                  src={category.image || userAvatar}
+                  src={category.image}
                   alt={category.name}
                   className="w-10 h-10 rounded-full"
                 />
@@ -147,23 +141,59 @@ const CategoryListSection: React.FC<{ onItemClick?: () => void }> = ({
               </div>
               <div className="flex flex-wrap sm:flex-row items-center justify-end gap-2 sm:gap-6 w-full sm:w-auto">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(category.id);
+                  onClick={() => {
+                    setEditCategory(category);
+                    setCategoryModal(true);
                   }}
+                  className="text-blue-600 hover:text-blue-800 transition"
+                  title="Edit Category"
+                >
+                  <Edit2 />
+                </button>
+                <button
+                  onClick={() => dispatch(deleteCategory(category.id))}
                   className="text-red-600 hover:text-red-800 transition"
                   title="Delete Category"
                 >
                   <Trash2 />
                 </button>
-                <ChevronDown className="text-gray-500 cursor-pointer" />
+                <ChevronDown
+                  className="text-gray-500 cursor-pointer"
+                  onClick={() =>
+                    setExpandedCategoryId(
+                      expandedCategoryId === category.id ? null : category.id
+                    )
+                  }
+                />
               </div>
             </div>
-            {/* ...subcategories/modal as you want... */}
+            {/* Expanded subcategory list/modal */}
+            {expandedCategoryId === category.id && (
+              <div className="ml-14 mr-14 mt-3 space-y-2">
+                <div className="w-full flex justify-center my-6">
+                  <div
+                    className="flex items-center gap-3 cursor-pointer group"
+                    onClick={() => setShowSubCategoryModal(true)}
+                  >
+                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 group-hover:bg-blue-200">
+                      <span className="text-blue-600 text-lg font-bold">+</span>
+                    </div>
+                    <span className="text-sm text-blue-600 group-hover:underline">
+                      Add Subcategory
+                    </span>
+                  </div>
+                </div>
+                {showSubCategoryModal && (
+                  <Modal onClose={() => setShowSubCategoryModal(false)}>
+                    <SubCategoryForm parentId={category.id} />
+                  </Modal>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
-      {/* Pagination */}
+      {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex flex-wrap items-center justify-center gap-2 py-4">
           <button
@@ -224,6 +254,24 @@ const CategoryListSection: React.FC<{ onItemClick?: () => void }> = ({
             Next
           </button>
         </div>
+      )}
+      {/* Category Modal (for edit/create) */}
+      {showCategoryModal && (
+        <Modal
+          onClose={() => {
+            setCategoryModal(false);
+            setEditCategory(null);
+          }}
+        >
+          <CategoryForm
+            initialData={editCategory}
+            categoryId={editCategory?.id}
+            onClose={() => {
+              setCategoryModal(false);
+              setEditCategory(null);
+            }}
+          />
+        </Modal>
       )}
     </div>
   );

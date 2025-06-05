@@ -23,5 +23,5 @@ export const createCategoryApi = (client: AxiosInstance) => ({
     client.post<CategoryResponse>("/api/categories", payload), // type this later as per your schema
 
   updateCategory: (id: string, updates: any) =>
-    client.put<CategoryResponse>(`/api/categories/${id}`, updates),
+    client.patch<CategoryResponse>(`/api/categories/${id}`, updates),
 });

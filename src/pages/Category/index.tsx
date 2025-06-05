@@ -4,6 +4,7 @@ import CategoryForm from "./CategoryForm";
 import Modal from "@/components/Common/Modal";
 
 const CategoryPage: FC = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [showCategoryModal, setCategoryModal] = useState(false);
 
@@ -21,12 +22,12 @@ const CategoryPage: FC = () => {
       </div>
 
       {/* Categories List */}
-      <CategoryListSection onItemClick={() => setCategoryModal(true)} />
+      <CategoryListSection />
 
       {/* Modal */}
       {showCategoryModal && (
         <Modal onClose={() => setCategoryModal(false)}>
-          <CategoryForm />
+          <CategoryForm onClose={() => setCategoryModal(false)} />
         </Modal>
       )}
     </div>
