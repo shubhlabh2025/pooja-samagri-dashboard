@@ -1,120 +1,137 @@
-import React, { useState } from "react";
+// src/components/Category/CategoryListSection.tsx
+import React, { useEffect, useRef, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
+import { fetchCategories, deleteCategory } from "@/slices/categorySlice";
+import { Trash2, Search, X, ChevronDown } from "lucide-react";
 import userAvatar from "../../assets/user.png";
-import { ChevronDown, Trash2 } from "lucide-react";
-import type { Category } from "@/interfaces/category";
 import Modal from "../Common/Modal";
-import CategoryForm from "@/pages/Category/CategoryForm";
+import SubCategoryForm from "@/pages/Category/SubCategoryForm";
 
-interface CategoryListSectionProps {
-  onItemClick?: () => void;
-}
+const PAGE_SIZE = 6;
+const DEBOUNCE_MS = 200;
 
-const mockCategories: Category[] = [
-  {
-    id: 1,
-    name: "T-Shirts",
-    image:
-      "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-  },
-  {
-    id: 2,
-    name: "Jeans",
-    image:
-      "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-  },
-  {
-    id: 3,
-    name: "Bags",
-    image:
-      "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-  },
-  {
-    id: 4,
-    name: "Hats",
-    image:
-      "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-  },
-  {
-    id: 5,
-    name: "Shoes",
-    image:
-      "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-  },
-  {
-    id: 6,
-    name: "Headphones",
-    image:
-      "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-  },
-  {
-    id: 7,
-    name: "Bottles",
-    image:
-      "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-  },
-  {
-    id: 8,
-    name: "Socks",
-    image:
-      "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-  },
-  {
-    id: 9,
-    name: "Bedsheets",
-    image:
-      "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-  },
-  {
-    id: 10,
-    name: "Stationery",
-    image:
-      "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-  },
-];
-
-// mock subcategories per category
-const mockSubCategories: { [key: number]: string[] } = {
-  1: ["Round Neck", "V-Neck"],
-  2: ["Skinny", "Straight Fit"],
-  3: ["Backpacks", "Totes"],
-};
-
-const CategoryListSection: React.FC<CategoryListSectionProps> = ({
+const CategoryListSection: React.FC<{ onItemClick?: () => void }> = ({
   onItemClick,
 }) => {
-  const [showAll, setShowAll] = useState(false);
-  const [showSubCateory, setSubCategoryModal] = useState(false);
-
-  const [expandedCategoryId, setExpandedCategoryId] = useState<number | null>(
-    null
+  const dispatch = useAppDispatch();
+  const { categories, status, error, pagination } = useAppSelector(
+    (state) => state.categories
   );
 
-  const displayedCategories = showAll
-    ? mockCategories
-    : mockCategories.slice(0, 6);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [query, setQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const toggleSubList = (id: number) => {
-    setExpandedCategoryId((prev) => (prev === id ? null : id));
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setQuery(searchText.trim());
+      setCurrentPage(1);
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(handler);
+  }, [searchText]);
+
+  // Fetch categories on page or query change
+  useEffect(() => {
+    dispatch(
+      fetchCategories({ page: currentPage, pageSize: PAGE_SIZE, q: query })
+    );
+  }, [dispatch, currentPage, query]);
+
+  useEffect(() => {
+    if (showSearch && inputRef.current) inputRef.current.focus();
+  }, [showSearch]);
+
+  const totalPages = pagination?.totalPages || 1;
+  const MAX_BUTTONS = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(MAX_BUTTONS / 2));
+  let endPage = Math.min(totalPages, startPage + MAX_BUTTONS - 1);
+  if (endPage - startPage < MAX_BUTTONS - 1) {
+    startPage = Math.max(1, endPage - MAX_BUTTONS + 1);
+  }
+  const pageButtons = [];
+  for (let i = startPage; i <= endPage; i++) pageButtons.push(i);
+
+  // Delete category
+  const handleDelete = (categoryId: string) => {
+    dispatch(deleteCategory(categoryId));
   };
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      {/* Top Bar */}
       <div className="border-b px-6 py-4 text-lg border-l-4 border-blue-500 flex items-center justify-between">
         <span className="font-semibold text-gray-800">Product Categories</span>
-        <span
-          onClick={() => setShowAll(!showAll)}
-          className="text-sm text-blue-600 hover:underline cursor-pointer"
-        >
-          {showAll ? "View Less" : "View All"}
-        </span>
+        <div className="flex gap-2">
+          {!showSearch && (
+            <button
+              onClick={() => setShowSearch(true)}
+              className="p-2 rounded bg-gray-100 hover:bg-blue-100 text-blue-600"
+              title="Search Categories"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
-
+      {/* Search Bar */}
+      {showSearch && (
+        <div className="flex gap-2 px-6 py-2 bg-gray-50 border-b">
+          <input
+            ref={inputRef}
+            type="text"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="Search categories by name..."
+            className="flex-1 px-3 py-2 border border-gray-200 rounded focus:outline-none"
+          />
+          {searchText && (
+            <button
+              type="button"
+              onClick={() => setSearchText("")}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+            >
+              Clear
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setShowSearch(false);
+              setSearchText("");
+            }}
+            className="p-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center justify-center"
+            title="Close search"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+      {/* Loading & Error */}
+      {status === "loading" && (
+        <div>
+          {[...Array(PAGE_SIZE)].map((_, i) => (
+            <div
+              key={i}
+              className="h-16 flex items-center justify-center text-gray-400"
+            >
+              Loading...
+            </div>
+          ))}
+        </div>
+      )}
+      {status === "failed" && (
+        <div className="px-6 py-4 text-red-500">{error}</div>
+      )}
+      {/* Category List */}
       <div className="divide-y">
-        {displayedCategories.map((category) => (
+        {categories.map((category) => (
           <div key={category.id} className="group relative">
             <div
-              onClick={onItemClick}
               className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3 cursor-pointer"
+              onClick={onItemClick}
             >
               <div className="flex items-center gap-4">
                 <img
@@ -128,65 +145,86 @@ const CategoryListSection: React.FC<CategoryListSectionProps> = ({
                   </div>
                 </div>
               </div>
-
               <div className="flex flex-wrap sm:flex-row items-center justify-end gap-2 sm:gap-6 w-full sm:w-auto">
-                <Trash2 className="text-gray-500" />
-                <ChevronDown
-                  className="text-gray-500 cursor-pointer"
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleSubList(category.id);
+                    handleDelete(category.id);
                   }}
-                />
+                  className="text-red-600 hover:text-red-800 transition"
+                  title="Delete Category"
+                >
+                  <Trash2 />
+                </button>
+                <ChevronDown className="text-gray-500 cursor-pointer" />
               </div>
             </div>
-
-            {/* Expanded Subcategory List */}
-            {expandedCategoryId === category.id && (
-              <div className="ml-14 mr-14 mt-3 space-y-2">
-                {(mockSubCategories[category.id] || []).map((sub, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between px-4 py-2 rounded bg-gray-50 hover:bg-gray-100 border"
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={userAvatar} // Or you can store an image URL in sub and use it here
-                        alt={sub}
-                        className="w-8 h-8 rounded-full"
-                      />
-                      <span className="text-sm font-medium text-gray-800">
-                        {sub}
-                      </span>
-                    </div>
-                    {/* Optional delete or edit icons can be added here */}
-                  </div>
-                ))}
-
-                {/* Add New Subcategory Button */}
-                <div className="w-full flex justify-center my-6">
-                  <div
-                    className="flex items-center gap-3 cursor-pointer group"
-                    onClick={() => setSubCategoryModal(true)}
-                  >
-                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 group-hover:bg-blue-200">
-                      <span className="text-blue-600 text-lg font-bold">+</span>
-                    </div>
-                    <span className="text-sm text-blue-600 group-hover:underline">
-                      Add Subcategory
-                    </span>
-                  </div>
-                </div>
-                {showSubCateory && (
-                  <Modal onClose={() => setSubCategoryModal(false)}>
-                    <CategoryForm />
-                  </Modal>
-                )}
-              </div>
-            )}
+            {/* ...subcategories/modal as you want... */}
           </div>
         ))}
       </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex flex-wrap items-center justify-center gap-2 py-4">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded bg-gray-100 text-gray-600 disabled:opacity-50"
+          >
+            Prev
+          </button>
+          {startPage > 1 && (
+            <>
+              <button
+                onClick={() => setCurrentPage(1)}
+                className={`px-3 py-1 rounded ${
+                  currentPage === 1
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                1
+              </button>
+              {startPage > 2 && <span className="px-1">...</span>}
+            </>
+          )}
+          {pageButtons.map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded ${
+                currentPage === page
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          {endPage < totalPages && (
+            <>
+              {endPage < totalPages - 1 && <span className="px-1">...</span>}
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                className={`px-3 py-1 rounded ${
+                  currentPage === totalPages
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {totalPages}
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 rounded bg-gray-100 text-gray-600 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

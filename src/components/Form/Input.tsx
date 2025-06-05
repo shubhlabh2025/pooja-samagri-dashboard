@@ -5,6 +5,7 @@ interface InputProps {
   value: string;
   type?: string;
   error?: string;
+  placeholder?: string; // <-- add this line
   onChange: (value: string) => void;
 }
 
@@ -13,6 +14,7 @@ const Input: React.FC<InputProps> = ({
   value,
   type = "text",
   error,
+  placeholder, // <-- add this line
   onChange,
 }) => {
   return (
@@ -24,6 +26,7 @@ const Input: React.FC<InputProps> = ({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder} // <-- add this line
         className={`w-full px-3 py-2 border rounded-md bg-gray-50 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
           error ? "border-red-400" : "border-gray-200"
         }`}

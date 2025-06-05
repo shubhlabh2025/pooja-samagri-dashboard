@@ -1,7 +1,7 @@
 import type { SubCategories } from "./categories";
 
 export interface ProductVariant {
-  variant_id: string;
+  id: string;
   product_id: string;
   display_label: string;
   name: string;
@@ -12,7 +12,25 @@ export interface ProductVariant {
   image: string[];
   brand_name: string;
   out_of_stock: boolean;
+  default_variant: boolean;
   min_quantity?: number;
   max_quantity?: number;
   total_available_quantity: number;
 }
+export const defaultVariant = (): ProductVariant => ({
+  id: "",
+  product_id: "",
+  display_label: "",
+  name: "",
+  description: "",
+  mrp: 0,
+  price: 0,
+  categories: [],
+  image: [],
+  brand_name: "",
+  out_of_stock: false,
+  default_variant: false,
+  min_quantity: 1,
+  max_quantity: 1,
+  total_available_quantity: 0,
+});

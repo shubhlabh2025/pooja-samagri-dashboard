@@ -1,285 +1,147 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import userAvatar from "../../assets/user.png";
-import type { Product } from "@/interfaces/product";
-import {  Trash2 } from "lucide-react";
-import { Link } from "react-router";
-const mockUsers: Product[] = [
-  {
-    id: "1",
-    out_of_stock: false,
-    default_variant_id: "v1",
-    product_variants: [
-      {
-        variant_id: "v1",
-        product_id: "1",
-        display_label: "Large",
-        name: "Basic T-shirt",
-        description: "A comfortable cotton t-shirt. ",
-        mrp: 499,
-        price: 299,
-        categories: [],
-        image: [
-          "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-        ],
-        brand_name: "ComfortWear",
-        out_of_stock: false,
-        min_quantity: 1,
-        max_quantity: 5,
-        total_available_quantity: 100,
-      },
-    ],
-  },
-  {
-    id: "2",
-    out_of_stock: true,
-    default_variant_id: "v2",
-    product_variants: [
-      {
-        variant_id: "v2",
-        product_id: "2",
-        display_label: "Medium",
-        name: "Denim Jeans",
-        description: "Slim fit stretchable jeans.",
-        mrp: 1299,
-        price: 999,
-        categories: [],
-        image: [
-          "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-        ],
-        brand_name: "DenimX",
-        out_of_stock: true,
-        min_quantity: 1,
-        max_quantity: 3,
-        total_available_quantity: 50,
-      },
-    ],
-  },
-  {
-    id: "3",
-    out_of_stock: false,
-    default_variant_id: "v3",
-    product_variants: [
-      {
-        variant_id: "v3",
-        product_id: "3",
-        display_label: "One Size",
-        name: "Canvas Tote Bag",
-        description: "Eco-friendly shopping tote.",
-        mrp: 399,
-        price: 249,
-        categories: [],
-        image: [
-          "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-        ],
-        brand_name: "EcoStyle",
-        out_of_stock: false,
-        min_quantity: 1,
-        max_quantity: 10,
-        total_available_quantity: 200,
-      },
-    ],
-  },
-  {
-    id: "4",
-    out_of_stock: false,
-    default_variant_id: "v4",
-    product_variants: [
-      {
-        variant_id: "v4",
-        product_id: "4",
-        display_label: "Free Size",
-        name: "Wool Beanie",
-        description: "Warm and stylish beanie.",
-        mrp: 599,
-        price: 349,
-        categories: [],
-        image: [
-          "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-        ],
-        brand_name: "WinterWear",
-        out_of_stock: false,
-        min_quantity: 1,
-        max_quantity: 4,
-        total_available_quantity: 120,
-      },
-    ],
-  },
-  {
-    id: "5",
-    out_of_stock: true,
-    default_variant_id: "v5",
-    product_variants: [
-      {
-        variant_id: "v5",
-        product_id: "5",
-        display_label: "Size 9",
-        name: "Running Shoes",
-        description: "Lightweight and durable.",
-        mrp: 2999,
-        price: 2199,
-        categories: [],
-        image: [
-          "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-        ],
-        brand_name: "RunX",
-        out_of_stock: true,
-        min_quantity: 1,
-        max_quantity: 2,
-        total_available_quantity: 20,
-      },
-    ],
-  },
-  {
-    id: "6",
-    out_of_stock: false,
-    default_variant_id: "v6",
-    product_variants: [
-      {
-        variant_id: "v6",
-        product_id: "6",
-        display_label: "Standard",
-        name: "Bluetooth Headphones",
-        description: "Noise-cancelling headphones.",
-        mrp: 3499,
-        price: 2799,
-        categories: [],
-        image: [
-          "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-        ],
-        brand_name: "SoundMax",
-        out_of_stock: false,
-        min_quantity: 1,
-        max_quantity: 1,
-        total_available_quantity: 75,
-      },
-    ],
-  },
-  {
-    id: "7",
-    out_of_stock: false,
-    default_variant_id: "v7",
-    product_variants: [
-      {
-        variant_id: "v7",
-        product_id: "7",
-        display_label: "500ml",
-        name: "Water Bottle",
-        description: "Insulated steel bottle.",
-        mrp: 699,
-        price: 499,
-        categories: [],
-        image: [
-          "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-        ],
-        brand_name: "HydroSafe",
-        out_of_stock: false,
-        min_quantity: 1,
-        max_quantity: 6,
-        total_available_quantity: 180,
-      },
-    ],
-  },
-  {
-    id: "8",
-    out_of_stock: false,
-    default_variant_id: "v8",
-    product_variants: [
-      {
-        variant_id: "v8",
-        product_id: "8",
-        display_label: "Pack of 3",
-        name: "Socks Set",
-        description: "Soft cotton socks.",
-        mrp: 299,
-        price: 199,
-        categories: [],
-        image: [
-          "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-        ],
-        brand_name: "FootFlex",
-        out_of_stock: false,
-        min_quantity: 1,
-        max_quantity: 3,
-        total_available_quantity: 90,
-      },
-    ],
-  },
-  {
-    id: "9",
-    out_of_stock: true,
-    default_variant_id: "v9",
-    product_variants: [
-      {
-        variant_id: "v9",
-        product_id: "9",
-        display_label: "King Size",
-        name: "Bedsheet Set",
-        description: "Soft cotton double bedsheet.",
-        mrp: 1799,
-        price: 1399,
-        categories: [],
-        image: [
-          "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-        ],
-        brand_name: "HomeFab",
-        out_of_stock: true,
-        min_quantity: 1,
-        max_quantity: 2,
-        total_available_quantity: 40,
-      },
-    ],
-  },
-  {
-    id: "10",
-    out_of_stock: false,
-    default_variant_id: "v10",
-    product_variants: [
-      {
-        variant_id: "v10",
-        product_id: "10",
-        display_label: "Standard",
-        name: "Notebook",
-        description: "Hardcover ruled notebook.",
-        mrp: 149,
-        price: 99,
-        categories: [],
-        image: [
-          "https://assets.customerglu.com/35deace8-c04f-43c3-a00b-9c06eaae7acb/WhatsApp Image 2025-05-12 at 01.36.19.jpeg",
-        ],
-        brand_name: "NoteX",
-        out_of_stock: false,
-        min_quantity: 1,
-        max_quantity: 10,
-        total_available_quantity: 300,
-      },
-    ],
-  },
-];
+import { Trash2, Search, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../hooks/reduxHooks";
+import { fetchProducts, deleteProduct } from "../../slices/productSlice";
+import { ProductSkeleton } from "../loadingSkeletons/productSkeleton";
+import { ErrorMessage } from "../Common/ErrorMessage";
+
+const PAGE_SIZE = 10;
+const DEBOUNCE_MS = 200;
 
 const ProductListSection: React.FC = () => {
-  const [showAll, setShowAll] = useState(false);
+  const dispatch = useAppDispatch();
+  const { products, status, error, pagination } = useAppSelector(
+    (state) => state.products
+  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const displayedProducts = showAll ? mockUsers : mockUsers.slice(0, 6);
+  // Debounce effect for searchText -> query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setQuery(searchText.trim());
+      setCurrentPage(1); // Always reset to page 1 on search change
+    }, DEBOUNCE_MS);
+
+    return () => clearTimeout(handler);
+  }, [searchText]);
+
+  // Fetch products on page or query change
+  useEffect(() => {
+    dispatch(
+      fetchProducts({ page: currentPage, pageSize: PAGE_SIZE, q: query })
+    );
+  }, [dispatch, currentPage, query]);
+
+  // Focus search input when it opens
+  useEffect(() => {
+    if (showSearch && inputRef.current) inputRef.current.focus();
+  }, [showSearch]);
+
+  const displayedProducts = Array.isArray(products) ? products : [];
+
+  // Numbered pagination logic
+  const totalPages = pagination?.totalPages || 1;
+  const pageButtons = [];
+  const MAX_BUTTONS = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(MAX_BUTTONS / 2));
+  let endPage = Math.min(totalPages, startPage + MAX_BUTTONS - 1);
+
+  if (endPage - startPage < MAX_BUTTONS - 1) {
+    startPage = Math.max(1, endPage - MAX_BUTTONS + 1);
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    pageButtons.push(i);
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="border-b px-6 py-4 text-lg border-l-4 border-blue-500 flex items-center justify-between">
         <span className="font-semibold text-gray-800">Our Products</span>
-        <span
-          onClick={() => setShowAll(!showAll)}
-          className="text-sm text-blue-600 hover:underline cursor-pointer"
-        >
-          {showAll ? "View Less" : "View All"}
-        </span>
+        <div className="flex gap-2">
+          {!showSearch && (
+            <button
+              onClick={() => setShowSearch(true)}
+              className="p-2 rounded bg-gray-100 hover:bg-blue-100 text-blue-600"
+              title="Search Products"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Debounced Search Bar (auto-search) */}
+      {showSearch && (
+        <div className="flex gap-2 px-6 py-2 bg-gray-50 border-b">
+          <input
+            ref={inputRef}
+            type="text"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="Search products by name..."
+            className="flex-1 px-3 py-2 border border-gray-200 rounded focus:outline-none"
+          />
+          {searchText && (
+            <button
+              type="button"
+              onClick={() => setSearchText("")}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+            >
+              Clear
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setShowSearch(false);
+              setSearchText("");
+            }}
+            className="p-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center justify-center"
+            title="Close search"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Loading & Error */}
+      {status === "loading" && (
+        <div>
+          {[...Array(6)].map((_, i) => (
+            <ProductSkeleton key={i} />
+          ))}
+        </div>
+      )}
+      {status === "failed" && (
+        <ErrorMessage message={error || "Something went wrong"} />
+      )}
+
+      {/* Products List */}
       <div className="divide-y">
         {displayedProducts.map((product) => {
-          const variant = product.product_variants[0];
+          const variant =
+            Array.isArray(product.product_variants) &&
+            product.product_variants.length > 0
+              ? product.product_variants[0]
+              : null;
+          if (!variant) return null;
+
           return (
-            <Link to="/productForm">
-              <div
-                key={product.id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3"
+            <div
+              key={product.id}
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3 group"
+            >
+              <Link
+                to={`/updateProductForm/${product.id}`}
+                className="flex-1 min-w-0"
+                style={{ textDecoration: "none" }}
               >
                 <div className="flex items-center gap-4">
                   <img
@@ -296,20 +158,90 @@ const ProductListSection: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
-                <div className="flex flex-wrap sm:flex-row items-center justify-end gap-2 sm:gap-6 w-full sm:w-auto">
-                  <div className="text-sm text-black-500 font-semibold">
-                    Rs. {variant.price.toFixed(2)}
-                  </div>
-                  <div className="flex gap-2">
-                    <Trash2 />
-                  </div>
+              </Link>
+              <div className="flex flex-wrap sm:flex-row items-center justify-end gap-2 sm:gap-6 w-full sm:w-auto">
+                <div className="text-sm text-black-500 font-semibold">
+                  Rs. {variant.price.toFixed(2)}
                 </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    dispatch(deleteProduct(product.id));
+                  }}
+                  className="text-red-600 hover:text-red-800 transition"
+                  title="Delete Product"
+                >
+                  <Trash2 />
+                </button>
               </div>
-            </Link>
+            </div>
           );
         })}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex flex-wrap items-center justify-center gap-2 py-4">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded bg-gray-100 text-gray-600 disabled:opacity-50"
+          >
+            Prev
+          </button>
+          {startPage > 1 && (
+            <>
+              <button
+                onClick={() => setCurrentPage(1)}
+                className={`px-3 py-1 rounded ${
+                  currentPage === 1
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                1
+              </button>
+              {startPage > 2 && <span className="px-1">...</span>}
+            </>
+          )}
+          {pageButtons.map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded ${
+                currentPage === page
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          {endPage < totalPages && (
+            <>
+              {endPage < totalPages - 1 && <span className="px-1">...</span>}
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                className={`px-3 py-1 rounded ${
+                  currentPage === totalPages
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {totalPages}
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 rounded bg-gray-100 text-gray-600 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

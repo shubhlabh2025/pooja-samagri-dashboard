@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import ProductListSection from "@/components/products/ProductListSection";
+import { SkeletonTheme } from "react-loading-skeleton";
 
 import { Link } from "react-router";
 
@@ -18,7 +19,9 @@ const Productpage: FC = () => {
       </div>
 
       {/* Charts Section */}
-      <ProductListSection></ProductListSection>
+      <SkeletonTheme baseColor="#f0f0f0" highlightColor="#e0e0e0">
+        <ProductListSection></ProductListSection>
+      </SkeletonTheme>
     </div>
   );
 };

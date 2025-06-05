@@ -12,6 +12,7 @@ import CustomerDetailSection from "@/pages/Customers/CustomerDetailSection";
 import OrderDetailSection from "@/pages/Orders/OrderDetailSection";
 import ConfigurationSection from "@/pages/Configurations";
 import OffersPage from "@/pages/Configurations/OffersPage";
+import UpdateProductForm from "@/pages/Product/updateProductForm";
 
 const AppRoutes = () => (
   <Routes>
@@ -46,6 +47,14 @@ const AppRoutes = () => (
       element={
         <DashboardLayout>
           <ProductVariantsForm />
+        </DashboardLayout>
+      }
+    />
+    <Route
+      path="/updateProductForm/:productId"
+      element={
+        <DashboardLayout>
+          <UpdateProductForm />
         </DashboardLayout>
       }
     />

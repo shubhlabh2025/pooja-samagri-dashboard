@@ -56,7 +56,7 @@ const AdBannerForm = () => {
 
   return (
     <div className="max-w-4xl mx-auto mt-4">
-      <h2 className="text-2xl font-semibold text-gray-800 ml-6">
+      <h2 className="text-xl font-semibold text-gray-800 ml-6">
         Create Ad Banner
       </h2>
 

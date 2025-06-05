@@ -4,33 +4,20 @@ import Input from "@/components/Form/Input";
 import TextArea from "@/components/Form/TextArea";
 import { useState } from "react";
 import { z } from "zod";
-
+import { useAppDispatch } from "@/hooks/reduxHooks";
 import BackArrow from "../../assets/arrow.png";
 import { useNavigate } from "react-router";
-
-export interface ProductVariant {
-  variant_id: string;
-  product_id: string;
-  display_label: string;
-  name: string;
-  description: string;
-  mrp: number;
-  price: number;
-  image: string[];
-  brand_name: string;
-  out_of_stock: boolean;
-  min_quantity?: number;
-  max_quantity?: number;
-  total_available_quantity: number;
-}
+import { createProduct } from "@/slices/productSlice";
+import type { ProductVariant } from "@/interfaces/product-variant";
 
 const defaultVariant = (): ProductVariant => ({
-  variant_id: "",
+  id: "",
   product_id: "",
   display_label: "",
   name: "",
   description: "",
   mrp: 0,
+  default_variant: true,
   price: 0,
   image: [],
   brand_name: "",
@@ -42,7 +29,7 @@ const defaultVariant = (): ProductVariant => ({
 
 const productVariantSchema = z
   .object({
-    variant_id: z.string().optional(),
+    id: z.string().optional(),
     product_id: z.string().optional(),
     display_label: z.string().min(1, "Required"),
     name: z.string().min(1, "Required"),
@@ -52,6 +39,7 @@ const productVariantSchema = z
     image: z.array(z.string()).min(1, "At least one image required"),
     brand_name: z.string().min(1, "Required"),
     out_of_stock: z.boolean(),
+    default_variant: z.boolean(),
     min_quantity: z.number().optional(),
     max_quantity: z.number().optional(),
     total_available_quantity: z.number().min(0, "Must be 0 or more"),
@@ -62,41 +50,64 @@ const productVariantSchema = z
   });
 
 const ProductVariantsForm = () => {
+  const dispatch = useAppDispatch();
+  const [productName, setProductName] = useState<string>("");
   const [variants, setVariants] = useState<ProductVariant[]>([
-    defaultVariant(),
+    { ...defaultVariant(), name: "" },
   ]);
   const navigate = useNavigate();
-
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>(
     {}
   );
 
+  // Update all variants' names when root name changes
+  const handleProductNameChange = (val: string) => {
+    setProductName(val);
+    setVariants((prev) => prev.map((v) => ({ ...v, name: val })));
+  };
+
+  // Only one variant can be default!
   const updateVariant = <K extends keyof ProductVariant>(
     index: number,
     field: K,
     value: ProductVariant[K]
   ) => {
-    const updated = [...variants];
-    updated[index][field] = value;
-
-    if (field === "name") {
-      updated.forEach((v) => (v.name = value as string));
+    let updated = [...variants];
+    if (field === "default_variant" && value) {
+      updated = updated.map((v, i) => ({
+        ...v,
+        default_variant: i === index,
+      }));
+    } else if (field === "default_variant" && !value) {
+      // Don't allow unsetting last default
+      const isOnlyDefault =
+        updated.filter((v) => v.default_variant).length === 1 &&
+        updated[index].default_variant;
+      if (isOnlyDefault) {
+        return; // don't let user unset last default
+      }
+      updated[index][field] = value;
+    } else {
+      updated[index][field] = value;
     }
-
     setVariants(updated);
   };
 
-  const addVariant = () => setVariants([...variants, defaultVariant()]);
+  const addVariant = () =>
+    setVariants([
+      ...variants,
+      { ...defaultVariant(), name: productName, default_variant: false },
+    ]);
   const removeVariant = (index: number) =>
     setVariants(variants.filter((_, i) => i !== index));
 
   const validate = (): boolean => {
     const newErrors: Record<number, Record<string, string>> = {};
     let valid = true;
-
     variants.forEach((variant, idx) => {
       const result = productVariantSchema.safeParse({
         ...variant,
+        name: productName, // always use the root name!
         mrp: Number(variant.mrp),
         price: Number(variant.price),
         total_available_quantity: Number(variant.total_available_quantity),
@@ -114,7 +125,6 @@ const ProductVariantsForm = () => {
         });
       }
     });
-
     setErrors(newErrors);
     return valid;
   };
@@ -123,17 +133,18 @@ const ProductVariantsForm = () => {
     e.preventDefault();
     if (validate()) {
       try {
-        const response = await fetch("/api/products/variants", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ variants }),
-        });
-
-        if (!response.ok) {
+        const payload = {
+          product_variants: variants.map((v) => ({
+            ...v,
+            name: productName,
+          })),
+        };
+        const response = await dispatch(createProduct(payload));
+        if (!response) {
           throw new Error("Failed to submit");
         }
-
         console.log("Variants submitted successfully");
+        navigate(-1);
       } catch (error) {
         console.error("Submission error:", error);
       }
@@ -153,15 +164,22 @@ const ProductVariantsForm = () => {
               navigate(-1);
             }}
           />
-          <h2 className="text-2xl font-semibold text-gray-800">
-            Add Product
-          </h2>
+          <h2 className="text-2xl font-semibold text-gray-800">Add Product</h2>
         </div>
-
-        {/* Subtext aligned with heading */}
         <p className="text-sm text-gray-500 ml-8">
           Add multiple variants of the same product.
         </p>
+      </div>
+
+      {/* Product Name at root level */}
+      <div className="flex items-end gap-3 mb-2">
+        <Input
+          label="Product Name"
+          placeholder="Name"
+          value={productName}
+          error={errors[0]?.name}
+          onChange={handleProductNameChange}
+        />
       </div>
 
       {variants.map((variant, index) => (
@@ -170,27 +188,24 @@ const ProductVariantsForm = () => {
           className="bg-white border border-gray-100 rounded-md p-6 space-y-6 shadow-sm"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input
-              label="Product Name"
-              value={variant.name}
-              error={errors[index]?.name}
-              onChange={(val) => updateVariant(index, "name", val)}
-            />
+            {/* REMOVE Product Name field here! */}
             <Input
               label="Variant Quantity"
+              placeholder="100g"
               value={variant.display_label}
               error={errors[index]?.display_label}
               onChange={(val) => updateVariant(index, "display_label", val)}
             />
-
             <Input
               label="Brand Name"
+              placeholder="Brand Name"
               value={variant.brand_name}
               error={errors[index]?.brand_name}
               onChange={(val) => updateVariant(index, "brand_name", val)}
             />
             <Input
               label="MRP"
+              placeholder="100"
               type="number"
               value={variant.mrp.toString()}
               error={errors[index]?.mrp}
@@ -199,6 +214,7 @@ const ProductVariantsForm = () => {
             <Input
               label="Price"
               type="number"
+              placeholder="100"
               value={variant.price.toString()}
               error={errors[index]?.price}
               onChange={(val) => updateVariant(index, "price", +val)}
@@ -236,13 +252,19 @@ const ProductVariantsForm = () => {
               error={errors[index]?.image}
               onChange={(val) => updateVariant(index, "image", val)}
             />
+          </div>
+          <div>
             <Checkbox
               label="Out of Stock"
               checked={variant.out_of_stock}
               onChange={(val) => updateVariant(index, "out_of_stock", val)}
             />
+            <Checkbox
+              label="Default Variant"
+              checked={variant.default_variant}
+              onChange={(val) => updateVariant(index, "default_variant", val)}
+            />
           </div>
-
           {variants.length > 1 && (
             <div className="flex justify-end">
               <button
