@@ -1,6 +1,6 @@
 // slices/productVariantSlice.ts
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { ProductVariant } from "@/interfaces/product-variant";
+import type { CreateProductVariantPayload, ProductVariant, UpdateProductVariantPayload } from "@/interfaces/product-variant";
 import { createProductVariantApi } from "../api/productVariantApi"; // adjust path as needed
 import axiosClient from "@/api/apiClient";
 
@@ -22,19 +22,30 @@ const variantApi = createProductVariantApi(axiosClient);
 
 export const createProductVariant = createAsyncThunk(
   "productVariant/create",
-  async (payload: { product_variants: ProductVariant[] }) => {
+  async (payload:  CreateProductVariantPayload ) => {
     const response = await variantApi.createProductVariant(payload);
-    return response.data;
+    return response.data.data;
   }
 );
 
+// API expects only updatable fields (not id/product_id/name)
+
+
+// update thunk:
 export const updateProductVariant = createAsyncThunk(
   "productVariant/update",
-  async ({ id, updates }: { id: string; updates: ProductVariant }) => {
+  async ({
+    id,
+    updates,
+  }: {
+    id: string;
+    updates: UpdateProductVariantPayload;
+  }) => {
     const response = await variantApi.updateProductVariant(id, updates);
     return response.data;
   }
 );
+
 
 export const deleteProductVariant = createAsyncThunk(
   "productVariant/delete",
@@ -57,7 +68,6 @@ const productVariantSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-  
 
       .addCase(createProductVariant.fulfilled, (state, action) => {
         // assuming backend returns new variant or all

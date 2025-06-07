@@ -38,6 +38,8 @@ const ProductListSection: React.FC = () => {
     dispatch(
       fetchProducts({ page: currentPage, pageSize: PAGE_SIZE, q: query })
     );
+    console.log("My product");
+    console.log(products);
   }, [dispatch, currentPage, query]);
 
   // Focus search input when it opens

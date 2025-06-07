@@ -3,7 +3,8 @@ import type { Product } from "@/interfaces/product";
 import type { PaginationMeta } from "@/interfaces/Pagination";
 import { createProductApi } from "../api/productApi";
 import axiosClient from "@/api/apiClient";
-import type { ProductVariant } from "@/interfaces/product-variant";
+import type { CreateProductVariant, ProductVariant } from "@/interfaces/product-variant";
+
 
 interface ProductState {
   products: Product[];
@@ -46,7 +47,10 @@ export const fetchProductById = createAsyncThunk(
 // 🔹 3. Create a new product
 export const createProduct = createAsyncThunk(
   "products/create",
-  async (payload: { product_variants: ProductVariant[] }) => {
+  async (payload: { product_variants: CreateProductVariant[] }) => {
+
+     
+
     const response = await productApi.createProduct(payload);
     return response.data;
   }

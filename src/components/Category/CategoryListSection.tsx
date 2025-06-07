@@ -60,7 +60,8 @@ const CategoryListSection: React.FC = () => {
   // Fetch subcategories on expand
   useEffect(() => {
     if (expandedCategoryId) {
-      dispatch(fetchSubCategories({ parent_id: expandedCategoryId }));
+      
+      dispatch(fetchSubCategories({ parent_id: [expandedCategoryId] }));
     }
   }, [expandedCategoryId, dispatch]);
 
@@ -73,9 +74,6 @@ const CategoryListSection: React.FC = () => {
     startPage = Math.max(1, endPage - MAX_BUTTONS + 1);
   }
 
-  const handleDelete = () => {
-    // Do the delete logic here
-  };
   const pageButtons = [];
   for (let i = startPage; i <= endPage; i++) pageButtons.push(i);
 
@@ -245,7 +243,6 @@ const CategoryListSection: React.FC = () => {
                               className="text-red-600 hover:text-red-800 transition"
                               onClick={() => setShowSubDialog(true)}
                             >
-                              {" "}
                               <Trash2 />
                             </button>
                             <DismissDialog

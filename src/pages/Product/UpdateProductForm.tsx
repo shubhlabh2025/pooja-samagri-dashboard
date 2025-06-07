@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
 import {
   fetchProductById,
-  updateProduct,
-  deleteProduct,
   updateProductName,
 } from "@/slices/productSlice";
 import Input from "@/components/Form/Input";
@@ -16,6 +14,13 @@ import { useParams, useNavigate } from "react-router";
 import { z } from "zod";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import BackArrow from "../../assets/arrow.png"; // Update if needed
+import {
+  createProductVariant,
+  deleteProductVariant,
+  updateProductVariant,
+} from "@/slices/productVariantSlice";
+import { omitKeys } from "@/utils/Utils";
+import DismissDialog from "@/components/Common/DismissDialog";
 
 const productVariantSchema = z
   .object({
@@ -45,6 +50,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const navigate = useNavigate();
   const { productId: paramProductId } = useParams<{ productId: string }>();
   const productId = propProductId || paramProductId;
+  const [showDialog, setShowDialog] = useState(false);
 
   const productFromStore = useAppSelector((state) =>
     state.products.products.find((p) => p.id === productId)
@@ -154,24 +160,56 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
 
   const handleSaveVariant = async (index: number) => {
     if (!validate()) return;
-    const variant = { ...variants[index], name: productName };
+    const variant = {
+      ...variants[index],
+      name: productName,
+      product_id: productId ?? "",
+    };
+    // Omit keys before sending to API
+
     try {
-      await dispatch(
-        updateProduct({
-          id: variant.id,
-          updates: variant,
-        })
-      );
-      // Optionally: show toast
+      if (!variant.id) {
+        // --- CREATE ---
+        const cleaned = omitKeys(variant, [
+          "id",
+          "categories",
+          "createdAt",
+          "updatedAt",
+        ]);
+        console.log(variant);
+        const result = await dispatch(createProductVariant(cleaned)).unwrap();
+        // Now update the local state with new id
+        setVariants((prev) =>
+          prev.map((v, i) => (i === index ? { ...v, ...result } : v))
+        );
+        // Optionally: show toast
+      } else {
+        const cleaned = omitKeys(variant, [
+          "id",
+          "product_id",
+          "categories",
+          "name",
+          "createdAt",
+          "updatedAt",
+        ]);
+        // --- UPDATE ---
+        await dispatch(
+          updateProductVariant({
+            id: variant.id,
+            updates: cleaned,
+          })
+        );
+        // Optionally: show toast
+      }
     } catch (error) {
-      console.error("Failed to update variant", error);
+      console.error("Failed to save variant", error);
     }
   };
 
   const handleDeleteVariant = async (index: number) => {
     const variant = variants[index];
     try {
-      await dispatch(deleteProduct(variant.id));
+      await dispatch(deleteProductVariant(variant.id));
       setVariants((prev) => prev.filter((_, i) => i !== index));
       setExpandedIndex(null);
     } catch (error) {
@@ -344,10 +382,22 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                   <button
                     type="button"
                     className="bg-red-100 text-red-700 px-4 py-2 rounded"
-                    onClick={() => handleDeleteVariant(index)}
+                    onClick={() => setShowDialog(true)}
                   >
                     Delete
                   </button>
+                  <DismissDialog
+                    open={showDialog}
+                    title="Delete Product"
+                    message="Are you sure you want to delete this Product?."
+                    confirmLabel="Delete"
+                    cancelLabel="Cancel"
+                    onConfirm={() => {
+                      handleDeleteVariant(index);
+                      setShowDialog(false);
+                    }}
+                    onCancel={() => setShowDialog(false)}
+                  />
                   <button
                     type="button"
                     className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

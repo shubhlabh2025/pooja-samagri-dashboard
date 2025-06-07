@@ -24,10 +24,12 @@ const DismissDialog: React.FC<DismissDialogProps> = ({
     <div className="fixed inset-0 z-40 bg-black/30 flex items-center justify-center">
       <div
         className="bg-white rounded-xl p-6 shadow-lg min-w-[320px] max-w-full"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="mb-2 text-lg font-semibold text-gray-800">{title}</div>
+          <div className="mb-2 text-lg font-semibold text-gray-800">
+            {title}
+          </div>
         )}
         <div className="mb-6 text-gray-700">{message}</div>
         <div className="flex justify-end gap-3">

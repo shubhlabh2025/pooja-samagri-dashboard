@@ -53,7 +53,9 @@ const OrderAcceptReject: React.FC = () => {
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="border-b px-6 py-4 text-lg border-l-4 border-blue-500 flex items-center justify-between">
-        <span className="font-semibold text-gray-800">Accept/Reject Orders</span>
+        <span className="font-semibold text-gray-800">
+          Accept/Reject Orders
+        </span>
         <span className="text-sm text-blue-600 hover:underline cursor-pointer">
           View All
         </span>

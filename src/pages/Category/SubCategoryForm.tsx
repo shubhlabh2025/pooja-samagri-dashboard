@@ -51,7 +51,8 @@ const SubCategoryForm = ({
   const validate = (): boolean => {
     const result = subCategorySchema.safeParse(form);
     if (!result.success) {
-      const fieldErrors: Partial<Record<keyof SubCategoryFormData, string>> = {};
+      const fieldErrors: Partial<Record<keyof SubCategoryFormData, string>> =
+        {};
       result.error.errors.forEach((err) => {
         const field = err.path[0] as keyof SubCategoryFormData;
         fieldErrors[field] = err.message;
@@ -72,12 +73,15 @@ const SubCategoryForm = ({
         actionResult = await dispatch(
           updateSubCategory({
             id: subCategoryId,
-            updates: { ...form, parent_id: parentId },
+            updates: {
+              name: form.name,
+              image: form.image,
+            },
           })
         );
       } else {
         actionResult = await dispatch(
-          createSubCategory({ ...form, categoryId: parentId })
+          createSubCategory({ ...form, parent_id: parentId })
         );
       }
       if (!("error" in actionResult)) {

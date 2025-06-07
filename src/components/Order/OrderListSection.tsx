@@ -54,18 +54,18 @@ const mockUsers: OrderData[] = [
   },
 ];
 
-const statusOptions = ["All","pending", "completed", "Payment Pending",];
+const statusOptions = ["All", "pending", "completed", "Payment Pending"];
 
 const OrderListSection: React.FC = () => {
-//   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  //   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 
-//   const toggleStatus = (status: string) => {
-//     setSelectedStatuses((prev) =>
-//       prev.includes(status)
-//         ? prev.filter((s) => s !== status)
-//         : [...prev, status]
-//     );
-//   };
+  //   const toggleStatus = (status: string) => {
+  //     setSelectedStatuses((prev) =>
+  //       prev.includes(status)
+  //         ? prev.filter((s) => s !== status)
+  //         : [...prev, status]
+  //     );
+  //   };
 
   const [statusFilter, setStatusFilter] = useState<string>("All");
 

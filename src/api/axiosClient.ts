@@ -7,7 +7,10 @@ interface CreateAxiosClientOptions {
   getAuthToken?: () => string | null;
 }
 
-export function createAxiosClient({ baseURL, getAuthToken }: CreateAxiosClientOptions): AxiosInstance {
+export function createAxiosClient({
+  baseURL,
+  getAuthToken,
+}: CreateAxiosClientOptions): AxiosInstance {
   const instance = axios.create({
     baseURL,
     headers: { "Content-Type": "application/json" },

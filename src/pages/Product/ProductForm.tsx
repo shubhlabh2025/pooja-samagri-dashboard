@@ -4,29 +4,16 @@ import Input from "@/components/Form/Input";
 import TextArea from "@/components/Form/TextArea";
 import { useState } from "react";
 import { z } from "zod";
-import { useAppDispatch } from "@/hooks/reduxHooks";
+import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
 import BackArrow from "../../assets/arrow.png";
 import { useNavigate } from "react-router";
 import { createProduct } from "@/slices/productSlice";
 import type { ProductVariant } from "@/interfaces/product-variant";
+import { Plus, X } from "lucide-react";
+import CategoriesModal from "@/components/Category/CategoriesModalComponent";
+import SubCategoriesModal from "@/components/Category/SubCategoryModalComponent"; // Create as per previous answer
 
-const defaultVariant = (): ProductVariant => ({
-  id: "",
-  product_id: "",
-  display_label: "",
-  name: "",
-  description: "",
-  mrp: 0,
-  default_variant: true,
-  price: 0,
-  image: [],
-  brand_name: "",
-  out_of_stock: false,
-  min_quantity: 1,
-  max_quantity: 1,
-  total_available_quantity: 0,
-});
-
+// Zod schema including categories and subcategories
 const productVariantSchema = z
   .object({
     id: z.string().optional(),
@@ -43,34 +30,86 @@ const productVariantSchema = z
     min_quantity: z.number().optional(),
     max_quantity: z.number().optional(),
     total_available_quantity: z.number().min(0, "Must be 0 or more"),
+    category_ids: z.array(z.string()).min(1, "Select at least 1 category"),
+    sub_category_ids: z.array(z.string()).optional(),
   })
   .refine((data) => data.price <= data.mrp, {
     message: "Price should not exceed MRP",
     path: ["price"],
   });
 
-const ProductVariantsForm = () => {
+// Default variant shape (with categories and subcategories)
+const defaultVariant = (): ProductVariant & {
+  category_ids: string[];
+  sub_category_ids: string[];
+} => ({
+  id: "",
+  product_id: "",
+  display_label: "",
+  name: "",
+  description: "",
+  mrp: 0,
+  default_variant: true,
+  price: 0,
+  image: [],
+  brand_name: "",
+  out_of_stock: false,
+  min_quantity: 1,
+  max_quantity: 1,
+  total_available_quantity: 1,
+  category_ids: [],
+  sub_category_ids: [],
+});
+
+const ProductForm = () => {
   const dispatch = useAppDispatch();
-  const [productName, setProductName] = useState<string>("");
-  const [variants, setVariants] = useState<ProductVariant[]>([
-    { ...defaultVariant(), name: "" },
-  ]);
   const navigate = useNavigate();
+
+  // Form state
+  const [productName, setProductName] = useState<string>("");
+  const [variants, setVariants] = useState<
+    (ProductVariant & { category_ids: string[]; sub_category_ids: string[] })[]
+  >([{ ...defaultVariant(), name: "" }]);
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>(
     {}
   );
+  // Modals control
+  const [categoryModalIndex, setCategoryModalIndex] = useState<number | null>(
+    null
+  );
+  const [subCategoryModalIndex, setSubCategoryModalIndex] = useState<
+    number | null
+  >(null);
 
-  // Update all variants' names when root name changes
+  // Categories/subcategories from global state
+  const categoriesState = useAppSelector((state) => state.categories);
+  const subCategoriesState = useAppSelector((state) => state.subCategories);
+
+  // Utility: get category/subcategory name by id
+  const getCategoryName = (id: string) =>
+    categoriesState.categories.find((c) => c.id === id)?.name || id;
+  const getSubCategoryName = (id: string) =>
+    subCategoriesState.subCategories.find((sc) => sc.id === id)?.name || id;
+
+  // Name sync
   const handleProductNameChange = (val: string) => {
     setProductName(val);
     setVariants((prev) => prev.map((v) => ({ ...v, name: val })));
   };
 
-  // Only one variant can be default!
-  const updateVariant = <K extends keyof ProductVariant>(
+  // Variant update utility
+  const updateVariant = <
+    K extends keyof (ProductVariant & {
+      category_ids: string[];
+      sub_category_ids: string[];
+    })
+  >(
     index: number,
     field: K,
-    value: ProductVariant[K]
+    value: (ProductVariant & {
+      category_ids: string[];
+      sub_category_ids: string[];
+    })[K]
   ) => {
     let updated = [...variants];
     if (field === "default_variant" && value) {
@@ -79,13 +118,10 @@ const ProductVariantsForm = () => {
         default_variant: i === index,
       }));
     } else if (field === "default_variant" && !value) {
-      // Don't allow unsetting last default
       const isOnlyDefault =
         updated.filter((v) => v.default_variant).length === 1 &&
         updated[index].default_variant;
-      if (isOnlyDefault) {
-        return; // don't let user unset last default
-      }
+      if (isOnlyDefault) return;
       updated[index][field] = value;
     } else {
       updated[index][field] = value;
@@ -101,18 +137,21 @@ const ProductVariantsForm = () => {
   const removeVariant = (index: number) =>
     setVariants(variants.filter((_, i) => i !== index));
 
+  // Validation
   const validate = (): boolean => {
     const newErrors: Record<number, Record<string, string>> = {};
     let valid = true;
     variants.forEach((variant, idx) => {
       const result = productVariantSchema.safeParse({
         ...variant,
-        name: productName, // always use the root name!
+        name: productName,
         mrp: Number(variant.mrp),
         price: Number(variant.price),
         total_available_quantity: Number(variant.total_available_quantity),
         min_quantity: Number(variant.min_quantity),
         max_quantity: Number(variant.max_quantity),
+        category_ids: variant.category_ids,
+        sub_category_ids: variant.sub_category_ids,
       });
 
       if (!result.success) {
@@ -129,21 +168,36 @@ const ProductVariantsForm = () => {
     return valid;
   };
 
+  // Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
       try {
         const payload = {
-          product_variants: variants.map((v) => ({
-            ...v,
-            name: productName,
-          })),
+          product_variants: variants.map((variant) => {
+            // Merge category_ids and sub_category_ids, remove duplicates
+            const mergedCategoryIds = Array.from(
+              new Set([
+                ...(variant.category_ids || []),
+                ...(variant.sub_category_ids || []),
+              ])
+            );
+
+            // Omit id, product_id, sub_category_ids
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { id, product_id, sub_category_ids, ...rest } = variant;
+
+            return {
+              ...rest,
+              name: productName, // Ensures name is always present (if using root)
+              category_ids: mergedCategoryIds,
+            };
+          }),
         };
         const response = await dispatch(createProduct(payload));
         if (!response) {
           throw new Error("Failed to submit");
         }
-        console.log("Variants submitted successfully");
         navigate(-1);
       } catch (error) {
         console.error("Submission error:", error);
@@ -151,18 +205,16 @@ const ProductVariantsForm = () => {
     }
   };
 
+  // --- JSX ---
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div>
-        {/* Row with arrow and heading */}
         <div className="flex items-center mb-1">
           <img
             src={BackArrow}
             alt="Back"
-            className="w-6 h-6 mr-2"
-            onClick={() => {
-              navigate(-1);
-            }}
+            className="w-6 h-6 mr-2 cursor-pointer"
+            onClick={() => navigate(-1)}
           />
           <h2 className="text-2xl font-semibold text-gray-800">Add Product</h2>
         </div>
@@ -182,13 +234,13 @@ const ProductVariantsForm = () => {
         />
       </div>
 
+      {/* Each Variant Form */}
       {variants.map((variant, index) => (
         <div
           key={index}
           className="bg-white border border-gray-100 rounded-md p-6 space-y-6 shadow-sm"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* REMOVE Product Name field here! */}
             <Input
               label="Variant Quantity"
               placeholder="100g"
@@ -253,6 +305,106 @@ const ProductVariantsForm = () => {
               onChange={(val) => updateVariant(index, "image", val)}
             />
           </div>
+
+          {/* Per-variant categories */}
+          <div className="mb-2 mt-4">
+            <span>Select Categories</span>
+          </div>
+          <div className="flex items-center flex-wrap gap-2 mb-2 mt-2 px-1">
+            {variant.category_ids.map((catId) => (
+              <span
+                key={catId}
+                className="inline-flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold"
+              >
+                {getCategoryName(catId)}
+                <button
+                  onClick={() =>
+                    updateVariant(
+                      index,
+                      "category_ids",
+                      variant.category_ids.filter((id) => id !== catId)
+                    )
+                  }
+                  className="ml-1 rounded hover:bg-blue-200 p-1"
+                  type="button"
+                >
+                  <X size={14} />
+                </button>
+              </span>
+            ))}
+            <button
+              type="button"
+              className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold hover:bg-blue-200"
+              onClick={() => setCategoryModalIndex(index)}
+            >
+              <Plus size={14} className="mr-1" /> Add Categories
+            </button>
+          </div>
+          {/* Category modal for this variant */}
+          <CategoriesModal
+            open={categoryModalIndex === index}
+            selectedCategoryIds={variant.category_ids}
+            onClose={() => setCategoryModalIndex(null)}
+            onSave={(ids) => {
+              updateVariant(index, "category_ids", ids);
+              setCategoryModalIndex(null);
+            }}
+          />
+
+          {/* Per-variant subcategories */}
+          <div className="mb-2 mt-4">
+            <span>Select Subcategories</span>
+          </div>
+          <div className="flex items-center flex-wrap gap-2 mb-2 mt-2 px-1">
+            {variant.sub_category_ids?.map((subId) => (
+              <span
+                key={subId}
+                className="inline-flex items-center bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold"
+              >
+                {getSubCategoryName(subId)}
+                <button
+                  onClick={() =>
+                    updateVariant(
+                      index,
+                      "sub_category_ids",
+                      variant.sub_category_ids.filter((id) => id !== subId)
+                    )
+                  }
+                  className="ml-1 rounded hover:bg-green-200 p-1"
+                  type="button"
+                >
+                  <X size={14} />
+                </button>
+              </span>
+            ))}
+            <button
+              type="button"
+              className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold hover:bg-green-200"
+              onClick={() => {
+                if (variant.category_ids.length === 0) {
+                  alert("Please select category first");
+                  // OR use a toast/snackbar if you have one
+                } else {
+                  setSubCategoryModalIndex(index);
+                }
+              }}
+            >
+              <Plus size={14} className="mr-1" /> Add Subcategories
+            </button>
+          </div>
+          {/* SubCategory modal for this variant */}
+          <SubCategoriesModal
+            open={subCategoryModalIndex === index}
+            parentCategoryIds={variant.category_ids}
+            selectedSubCategoryIds={variant.sub_category_ids}
+            onClose={() => setSubCategoryModalIndex(null)}
+            onSave={(ids) => {
+              updateVariant(index, "sub_category_ids", ids);
+              setSubCategoryModalIndex(null);
+            }}
+          />
+
+          {/* Variant controls */}
           <div>
             <Checkbox
               label="Out of Stock"
@@ -298,4 +450,4 @@ const ProductVariantsForm = () => {
   );
 };
 
-export default ProductVariantsForm;
+export default ProductForm;

@@ -29,9 +29,17 @@ const initialState: SubCategoryState = {
 
 export const fetchSubCategories = createAsyncThunk(
   "subCategories/fetchAll",
-  async (params: { page?: number; pageSize?: number; q?: string; parent_id?: string } = {}) => {
-    // Use parent_id for filtering subcategories for a given category if needed
-    const response = await subCategoryApi.getSubCategoriesById(params.parent_id || "");
+  async (
+    params: {
+      page?: number;
+      pageSize?: number;
+      q?: string;
+      parent_id?: string[];
+    } = {}
+  ) => {
+    // Default to an empty array if not provided
+    const parentIds = params.parent_id || [];
+    const response = await subCategoryApi.getSubCategoriesById(parentIds);
     const { data, meta } = response.data;
     return { subCategories: data, pagination: meta };
   }
@@ -114,7 +122,9 @@ const subCategorySlice = createSlice({
       })
 
       .addCase(deleteSubCategory.fulfilled, (state, action) => {
-        state.subCategories = state.subCategories.filter((s) => s.id !== action.payload);
+        state.subCategories = state.subCategories.filter(
+          (s) => s.id !== action.payload
+        );
       });
   },
 });

@@ -27,6 +27,7 @@ const Input: React.FC<InputProps> = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder} // <-- add this line
+        {...(type === "number" ? { min: 0 } : {})}
         className={`w-full px-3 py-2 border rounded-md bg-gray-50 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
           error ? "border-red-400" : "border-gray-200"
         }`}

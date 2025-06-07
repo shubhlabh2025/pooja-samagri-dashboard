@@ -62,7 +62,7 @@ const CategoryForm = ({
       let actionResult;
       if (categoryId) {
         actionResult = await dispatch(
-          updateCategory({ id: categoryId, updates: form })
+          updateCategory({ id: categoryId, updates: {name: form.name, image:form.image} })
         );
       } else {
         actionResult = await dispatch(createCategory(form));
