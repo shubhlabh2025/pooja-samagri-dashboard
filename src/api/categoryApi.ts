@@ -1,6 +1,7 @@
 import type { AxiosInstance } from "axios";
 import type { GetCategoriesResponse } from "@/interfaces/GetAllCategoriesResponse";
 import type { CategoryResponse } from "@/interfaces/CategoryResposne";
+import type { ApiResponse } from "@/interfaces/api-response";
 
 export const createCategoryApi = (client: AxiosInstance) => ({
   getAllCategories: (

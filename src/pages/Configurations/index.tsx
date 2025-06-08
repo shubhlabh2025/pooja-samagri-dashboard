@@ -1,206 +1,365 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
+import {
+  fetchConfiguration,
+  updateConfiguration,
+} from "@/slices/configurationSlice";
 import { z } from "zod";
-import { useNavigate } from "react-router-dom";
 import Input from "@/components/Form/Input";
 import Toggle from "@/components/Form/Toggle";
-import { ArrowRight } from "lucide-react";
-import AnnouncemntForm from "./AnnouncemntForm";
-import Modal from "@/components/Common/Modal";
-import AdBannerForm from "./AdBannerForm";
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  X,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-// Zod Schema
-const configSchema = z.object({
-  storeName: z.string().min(1, "Store name is required"),
-  storeStatus: z.boolean(),
-  category: z.string().min(1, "Category is required"),
-  phone: z.string().min(10, "Phone number is required"),
-  whatsapp: z.string().min(10, "WhatsApp number is required"),
-  location: z.string().min(1, "Location is required"),
-  radius: z.number().min(1, "Radius must be at least 1"),
-  minOrder: z.number().min(0),
-  deliveryCharge: z.number().min(0),
-  deliveryTime: z.number().min(1),
+const configurationSchema = z.object({
+  phone_number: z.string().min(10, "Phone number is required"),
+  whatsapp_number: z.string().min(10, "WhatsApp number is required"),
+  store_status: z.boolean(),
+  min_order_amount: z.number().min(0),
+  delivery_charge: z.number().min(0),
+  delivery_time: z.number().min(1),
+  delivery_radius: z.number().min(1),
+  announcement_text: z.string().optional(),
+  ad_banners: z
+    .array(
+      z.object({
+        id: z.string(),
+        image: z.string().url("Valid image URL required"),
+        action: z.string(),
+      })
+    )
+    .optional(),
 });
 
-type ConfigFormData = z.infer<typeof configSchema>;
+type ConfigurationFormData = z.infer<typeof configurationSchema>;
 
-const defaultConfig: ConfigFormData = {
-  storeName: "",
-  storeStatus: true,
-  category: "",
-  phone: "",
-  whatsapp: "",
-  location: "",
-  radius: 0,
-  minOrder: 0,
-  deliveryCharge: 0,
-  deliveryTime: 0,
+const defaultConfig: ConfigurationFormData = {
+  phone_number: "",
+  whatsapp_number: "",
+  store_status: true,
+  min_order_amount: 0,
+  delivery_charge: 0,
+  delivery_time: 1,
+  delivery_radius: 1,
+  announcement_text: "",
+  ad_banners: [],
 };
 
+function generateId() {
+  // Simple unique ID for demo (use uuid in prod)
+  return Math.random().toString(36).slice(2, 10);
+}
+
 const ConfigurationSection = () => {
-  const [form, setForm] = useState<ConfigFormData>(defaultConfig);
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof ConfigFormData, string>>
-  >({});
-  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
-  const [showAdBannerModal, setAdBannerModal] = useState(false);
+  const dispatch = useAppDispatch();
+  const configState = useAppSelector((state) => state.configurations);
   const navigate = useNavigate();
 
-  const updateField = <K extends keyof ConfigFormData>(
+  const [form, setForm] = useState<ConfigurationFormData>(defaultConfig);
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof ConfigurationFormData, string>>
+  >({});
+  const [announcementOpen, setAnnouncementOpen] = useState(false);
+  const [adBannerOpen, setAdBannerOpen] = useState(false);
+
+  // For ad banner add/edit UI
+  const [adBannerDraft, setAdBannerDraft] = useState<{
+    image: string;
+    action: string;
+  }>({ image: "", action: "" });
+  const [adBannerEditIndex, setAdBannerEditIndex] = useState<number | null>(
+    null
+  );
+  const [adBannerError, setAdBannerError] = useState<string>("");
+
+  // Fetch config on mount
+  useEffect(() => {
+    dispatch(fetchConfiguration());
+  }, [dispatch]);
+
+  // Populate form from fetched config
+  useEffect(() => {
+    if (configState.data) {
+      setForm({
+        phone_number: configState.data.phone_number || "",
+        whatsapp_number: configState.data.whatsapp_number || "",
+        store_status: configState.data.store_status ?? true,
+        min_order_amount: configState.data.min_order_amount ?? 0,
+        delivery_charge: configState.data.delivery_charge ?? 0,
+        delivery_time: configState.data.delivery_time ?? 1,
+        delivery_radius: configState.data.delivery_radius ?? 1,
+        announcement_text: configState.data.announcement_text || "",
+        ad_banners: configState.data.ad_banners || [],
+      });
+    }
+  }, [configState.data]);
+
+  const updateField = <K extends keyof ConfigurationFormData>(
     field: K,
-    value: ConfigFormData[K]
+    value: ConfigurationFormData[K]
   ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
+  // Ad Banner helpers
+  const resetAdBannerDraft = () => setAdBannerDraft({ image: "", action: "" });
+
+  const handleAddBanner = () => {
+    if (!adBannerDraft.image || !adBannerDraft.action) {
+      setAdBannerError("Both image and action are required");
+      return;
+    }
+    if (adBannerEditIndex !== null) {
+      // Edit mode
+      const banners = [...(form.ad_banners || [])];
+      banners[adBannerEditIndex] = {
+        ...banners[adBannerEditIndex],
+        ...adBannerDraft,
+      };
+      updateField("ad_banners", banners);
+      setAdBannerEditIndex(null);
+    } else {
+      // Add mode
+      updateField("ad_banners", [
+        ...(form.ad_banners || []),
+        { id: generateId(), ...adBannerDraft },
+      ]);
+    }
+    resetAdBannerDraft();
+    setAdBannerError("");
+  };
+
+  const handleEditBanner = (index: number) => {
+    const banner = form.ad_banners?.[index];
+    if (banner) {
+      setAdBannerDraft({ image: banner.image, action: banner.action });
+      setAdBannerEditIndex(index);
+      setAdBannerError("");
+      setAdBannerOpen(true);
+    }
+  };
+
+  const handleDeleteBanner = (index: number) => {
+    const banners = (form.ad_banners || []).filter((_, i) => i !== index);
+    updateField("ad_banners", banners);
+  };
+
   const validate = (): boolean => {
-    const result = configSchema.safeParse(form);
-    if (!result.success) {
-      const fieldErrors: Partial<Record<keyof ConfigFormData, string>> = {};
-      result.error.errors.forEach((err) => {
-        const field = err.path[0] as keyof ConfigFormData;
-        fieldErrors[field] = err.message;
-      });
-      setErrors(fieldErrors);
-      return false;
+    try {
+      const result = configurationSchema.safeParse(form);
+      if (!result.success) {
+        const fieldErrors: Partial<
+          Record<keyof ConfigurationFormData, string>
+        > = {};
+        result.error.errors.forEach((err) => {
+          const field = err.path[0] as keyof ConfigurationFormData;
+          fieldErrors[field] = err.message;
+        });
+        setErrors(fieldErrors);
+        return false;
+      }
+    } catch (e) {
+      console.log(e);
     }
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-    alert("Configuration saved!");
+    // if (!validate()) return;
+    console.log(form);
+    await dispatch(updateConfiguration(form));
   };
 
+  if (configState.status === "loading" && !configState.data) {
+    return <div>Loading...</div>;
+  }
+  if (configState.status === "failed") {
+    return <div className="text-red-500">{configState.error}</div>;
+  }
+
   return (
-    <>
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden py-6 px-6">
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Store Configuration
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <Input
-              label="Enter Your business name"
-              value={form.storeName}
-              error={errors.storeName}
-              onChange={(val) => updateField("storeName", val)}
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden py-6 px-6 mx-auto">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <h2 className="text-xl font-semibold text-gray-800">
+          Store Configuration
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <div className="md:col-span-2">
+            <Toggle
+              label="Store status"
+              checked={form.store_status}
+              onChange={(val) => updateField("store_status", val)}
             />
+          </div>
+          <Input
+            label="Phone No"
+            value={form.phone_number}
+            error={errors.phone_number}
+            onChange={(val) => updateField("phone_number", val)}
+          />
+          <Input
+            label="Whatsapp No"
+            value={form.whatsapp_number}
+            error={errors.whatsapp_number}
+            onChange={(val) => updateField("whatsapp_number", val)}
+          />
+          <Input
+            label="Minimum Order Amount in Rupee"
+            type="number"
+            value={form.min_order_amount.toString()}
+            onChange={(val) => updateField("min_order_amount", +val)}
+          />
+          <Input
+            label="Delivery charge in Rupee"
+            type="number"
+            value={form.delivery_charge.toString()}
+            onChange={(val) => updateField("delivery_charge", +val)}
+          />
+          <Input
+            label="Delivery time (in Days)"
+            type="number"
+            value={form.delivery_time.toString()}
+            onChange={(val) => updateField("delivery_time", +val)}
+          />
+          <Input
+            label="Delivery Radius (in km)"
+            type="number"
+            value={form.delivery_radius.toString()}
+            onChange={(val) => updateField("delivery_radius", +val)}
+          />
+        </div>
 
-            <Input
-              label="Phone No"
-              value={form.phone}
-              error={errors.phone}
-              onChange={(val) => updateField("phone", val)}
-            />
-
-            <Input
-              label="Whatsapp No"
-              value={form.whatsapp}
-              error={errors.whatsapp}
-              onChange={(val) => updateField("whatsapp", val)}
-            />
-
-            <Input
-              label="Store Location"
-              value={form.location}
-              error={errors.location}
-              onChange={(val) => updateField("location", val)}
-            />
-
-            <Input
-              label="Serving Radius (KM)"
-              type="number"
-              value={form.radius.toString()}
-              error={errors.radius}
-              onChange={(val) => updateField("radius", +val)}
-            />
-
-            <Input
-              label="Minimum Order Amount in Rupee"
-              type="number"
-              value={form.minOrder.toString()}
-              onChange={(val) => updateField("minOrder", +val)}
-            />
-
-            <Input
-              label="Delivery charge in Rupee"
-              type="number"
-              value={form.deliveryCharge.toString()}
-              onChange={(val) => updateField("deliveryCharge", +val)}
-            />
-
-            <Input
-              label="Delivery time (in Hr)"
-              type="number"
-              value={form.deliveryTime.toString()}
-              onChange={(val) => updateField("deliveryTime", +val)}
-            />
-
-            <div className="md:col-span-2">
-              <Toggle
-                label="Store status"
-                checked={form.storeStatus}
-                onChange={(val) => updateField("storeStatus", val)}
+        {/* Actions List */}
+        <div className="pt-4 space-y-2 border-t border-gray-200 mt-6">
+          {/* Announcement Accordion */}
+          <button
+            type="button"
+            onClick={() => setAnnouncementOpen((open) => !open)}
+            className="flex justify-between items-center w-full text-left px-2 py-3 text-sm font-medium text-gray-800 hover:bg-gray-100 border-b border-gray-200"
+          >
+            <span>Announcement</span>
+            {announcementOpen ? (
+              <ChevronUp className="w-5 h-5" />
+            ) : (
+              <ChevronDown className="w-5 h-5" />
+            )}
+          </button>
+          {announcementOpen && (
+            <div className="bg-gray-50 p-4 rounded-b">
+              <Input
+                label="Announcement Text"
+                value={form.announcement_text || ""}
+                onChange={(val) => updateField("announcement_text", val)}
               />
             </div>
-          </div>
+          )}
 
-          {/* Actions List */}
-          <div className="pt-4 space-y-2 border-t border-gray-200 mt-6">
-            {[
-              {
-                label: "Announcement",
-                onClick: () => setShowAnnouncementModal(true),
-              },
-              {
-                label: "Ad Banner",
-                onClick: () => setAdBannerModal(true),
-              },
-              {
-                label: "Offers",
-                onClick: () => navigate("/offers"),
-              },
-            ].map((item, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={item.onClick}
-                className="flex justify-between items-center w-full text-left px-2 py-3 text-sm font-medium text-gray-800 hover:bg-gray-100 border-b border-gray-200"
-              >
-                <span>{item.label}</span>
-                <ArrowRight className="w-4 h-4 text-gray-500" />
-              </button>
-            ))}
-          </div>
+          {/* Ad Banner Accordion */}
+          <button
+            type="button"
+            onClick={() => setAdBannerOpen((open) => !open)}
+            className="flex justify-between items-center w-full text-left px-2 py-3 text-sm font-medium text-gray-800 hover:bg-gray-100 border-b border-gray-200"
+          >
+            <span>Ad Banner</span>
+            {adBannerOpen ? (
+              <ChevronUp className="w-5 h-5" />
+            ) : (
+              <ChevronDown className="w-5 h-5" />
+            )}
+          </button>
+          {adBannerOpen && (
+            <div className="bg-gray-50 p-4 rounded-b">
+              <div className="mb-4">
+                {(form.ad_banners || []).map((banner, idx) => (
+                  <div
+                    key={banner.id}
+                    className="flex items-center gap-4 bg-white shadow p-2 rounded mb-2"
+                  >
+                    <img
+                      src={banner.image}
+                      alt="Banner"
+                      className="w-16 h-10 object-cover rounded"
+                    />
+                    <span className="flex-1">{banner.action}</span>
+                    <button
+                      type="button"
+                      className="text-blue-600 hover:underline"
+                      onClick={() => handleEditBanner(idx)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="text-red-500"
+                      onClick={() => handleDeleteBanner(idx)}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {/* Banner Add/Edit Form */}
+              <div className="flex flex-col md:flex-row gap-2 items-center">
+                <Input
+                  label="Image URL"
+                  value={adBannerDraft.image}
+                  onChange={(val) =>
+                    setAdBannerDraft((d) => ({ ...d, image: val }))
+                  }
+                />
+                <Input
+                  label="Action"
+                  value={adBannerDraft.action}
+                  onChange={(val) =>
+                    setAdBannerDraft((d) => ({ ...d, action: val }))
+                  }
+                />
+                <div className="flex h-full flex-col self-end">
+                  <button
+                    type="button"
+                    className="bg-blue-600 text-white px-3 py-1.5 text-sm rounded hover:bg-blue-700 flex items-center gap-1"
+                    onClick={handleAddBanner}
+                  >
+                    {adBannerEditIndex !== null ? "Update" : "Add"}
+                  </button>
+                </div>
+              </div>
+              {adBannerError && (
+                <div className="text-red-500 text-xs mt-2">{adBannerError}</div>
+              )}
+            </div>
+          )}
 
-          <div className="pt-6">
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700"
-            >
-              Save Configuration
-            </button>
-          </div>
-        </form>
-      </div>
+          {/* Offers Navigation */}
+          <button
+            type="button"
+            onClick={() => navigate("/offers")}
+            className="flex justify-between items-center w-full text-left px-2 py-3 text-sm font-medium text-gray-800 hover:bg-gray-100 border-b border-gray-200"
+          >
+            <span>Offers</span>
+            <ArrowRight className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
 
-      {/* Announcement Modal */}
-      {showAnnouncementModal && (
-        <Modal onClose={() => setShowAnnouncementModal(false)}>
-          <AnnouncemntForm />
-        </Modal>
-      )}
-
-      {showAdBannerModal && (
-         <Modal onClose={() => setAdBannerModal(false)}>
-          <AdBannerForm />
-        </Modal>
-      )}
-    </>
+        <div className="pt-6">
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700"
+          >
+            Save Configuration
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

@@ -109,7 +109,7 @@ const OffersPage = () => {
         </p>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-md p-6 space-y-6 shadow-sm max-w-4xl">
+      <div className="bg-white border border-gray-100 rounded-md p-6 space-y-6 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
             label="Offer Code"
