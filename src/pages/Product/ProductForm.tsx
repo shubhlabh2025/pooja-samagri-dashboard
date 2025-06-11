@@ -30,8 +30,8 @@ const productVariantSchema = z
     min_quantity: z.number().optional(),
     max_quantity: z.number().optional(),
     total_available_quantity: z.number().min(0, "Must be 0 or more"),
-    category_ids: z.array(z.string()).min(1, "Select at least 1 category"),
-    sub_category_ids: z.array(z.string()).optional(),
+    category_ids: z.array(z.string()).optional(),
+    subcategory_ids: z.array(z.string()).optional(),
   })
   .refine((data) => data.price <= data.mrp, {
     message: "Price should not exceed MRP",
@@ -41,7 +41,7 @@ const productVariantSchema = z
 // Default variant shape (with categories and subcategories)
 const defaultVariant = (): ProductVariant & {
   category_ids: string[];
-  sub_category_ids: string[];
+  subcategory_ids: string[];
 } => ({
   id: "",
   product_id: "",
@@ -58,7 +58,7 @@ const defaultVariant = (): ProductVariant & {
   max_quantity: 1,
   total_available_quantity: 1,
   category_ids: [],
-  sub_category_ids: [],
+  subcategory_ids: [],
 });
 
 const ProductForm = () => {
@@ -68,7 +68,7 @@ const ProductForm = () => {
   // Form state
   const [productName, setProductName] = useState<string>("");
   const [variants, setVariants] = useState<
-    (ProductVariant & { category_ids: string[]; sub_category_ids: string[] })[]
+    (ProductVariant & { category_ids: string[], subcategory_ids: string[] })[]
   >([{ ...defaultVariant(), name: "" }]);
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>(
     {}
@@ -101,14 +101,14 @@ const ProductForm = () => {
   const updateVariant = <
     K extends keyof (ProductVariant & {
       category_ids: string[];
-      sub_category_ids: string[];
+      subcategory_ids: string[];
     })
   >(
     index: number,
     field: K,
     value: (ProductVariant & {
       category_ids: string[];
-      sub_category_ids: string[];
+      subcategory_ids: string[];
     })[K]
   ) => {
     let updated = [...variants];
@@ -151,7 +151,7 @@ const ProductForm = () => {
         min_quantity: Number(variant.min_quantity),
         max_quantity: Number(variant.max_quantity),
         category_ids: variant.category_ids,
-        sub_category_ids: variant.sub_category_ids,
+        subcategory_ids: variant.subcategory_ids,
       });
 
       if (!result.success) {
@@ -176,21 +176,22 @@ const ProductForm = () => {
         const payload = {
           product_variants: variants.map((variant) => {
             // Merge category_ids and sub_category_ids, remove duplicates
-            const mergedCategoryIds = Array.from(
-              new Set([
-                ...(variant.category_ids || []),
-                ...(variant.sub_category_ids || []),
-              ])
-            );
+            // const mergedCategoryIds = Array.from(
+            //   new Set([
+            //     ...(variant.category_ids || []),
+            //     ...(variant.subcategory_ids || []),
+            //   ])
+            // );
 
             // Omit id, product_id, sub_category_ids
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { id, product_id, sub_category_ids, ...rest } = variant;
+            const { id, product_id, subcategory_ids, ...rest } = variant;
 
             return {
               ...rest,
               name: productName, // Ensures name is always present (if using root)
-              category_ids: mergedCategoryIds,
+              category_ids: variant.category_ids,
+              subcategory_ids: variant.subcategory_ids,
             };
           }),
         };
@@ -322,7 +323,7 @@ const ProductForm = () => {
                     updateVariant(
                       index,
                       "category_ids",
-                      variant.category_ids.filter((id) => id !== catId)
+                      variant.category_ids .filter((id) => id !== catId) as string[]
                     )
                   }
                   className="ml-1 rounded hover:bg-blue-200 p-1"
@@ -356,7 +357,7 @@ const ProductForm = () => {
             <span>Select Subcategories</span>
           </div>
           <div className="flex items-center flex-wrap gap-2 mb-2 mt-2 px-1">
-            {variant.sub_category_ids?.map((subId) => (
+            {variant.subcategory_ids?.map((subId) => (
               <span
                 key={subId}
                 className="inline-flex items-center bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold"
@@ -366,8 +367,8 @@ const ProductForm = () => {
                   onClick={() =>
                     updateVariant(
                       index,
-                      "sub_category_ids",
-                      variant.sub_category_ids.filter((id) => id !== subId)
+                      "subcategory_ids",
+                      variant.subcategory_ids.filter((id) => id !== subId)
                     )
                   }
                   className="ml-1 rounded hover:bg-green-200 p-1"
@@ -396,10 +397,10 @@ const ProductForm = () => {
           <SubCategoriesModal
             open={subCategoryModalIndex === index}
             parentCategoryIds={variant.category_ids}
-            selectedSubCategoryIds={variant.sub_category_ids}
+            selectedSubCategoryIds={variant.subcategory_ids}
             onClose={() => setSubCategoryModalIndex(null)}
             onSave={(ids) => {
-              updateVariant(index, "sub_category_ids", ids);
+              updateVariant(index, "subcategory_ids", ids);
               setSubCategoryModalIndex(null);
             }}
           />

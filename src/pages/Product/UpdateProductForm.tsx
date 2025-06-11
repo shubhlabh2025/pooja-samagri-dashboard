@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
-import {
-  fetchProductById,
-  updateProductName,
-} from "@/slices/productSlice";
+import { fetchProductById, updateProductName } from "@/slices/productSlice";
 import Input from "@/components/Form/Input";
 import TextArea from "@/components/Form/TextArea";
 import Checkbox from "@/components/Form/Checkbox";
@@ -12,8 +9,8 @@ import type { ProductVariant } from "@/interfaces/product-variant";
 import { defaultVariant } from "@/interfaces/product-variant";
 import { useParams, useNavigate } from "react-router";
 import { z } from "zod";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import BackArrow from "../../assets/arrow.png"; // Update if needed
+import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
+import BackArrow from "../../assets/arrow.png";
 import {
   createProductVariant,
   deleteProductVariant,
@@ -21,6 +18,9 @@ import {
 } from "@/slices/productVariantSlice";
 import { omitKeys } from "@/utils/Utils";
 import DismissDialog from "@/components/Common/DismissDialog";
+import CategoriesModal from "@/components/Category/CategoriesModalComponent";
+import SubCategoriesModal from "@/components/Category/SubCategoryModalComponent";
+import { fetchCategories } from "@/slices/categorySlice";
 
 const productVariantSchema = z
   .object({
@@ -37,11 +37,19 @@ const productVariantSchema = z
     min_quantity: z.number().optional(),
     max_quantity: z.number().optional(),
     total_available_quantity: z.number().min(0, "Must be 0 or more"),
+    category_ids: z.array(z.string()).optional(),
+    subcategory_ids: z.array(z.string()).optional(),
   })
   .refine((data) => data.price <= data.mrp, {
     message: "Price should not exceed MRP",
     path: ["price"],
   });
+
+// Extended ProductVariant interface for local state
+interface ExtendedProductVariant extends ProductVariant {
+  category_ids: string[];
+  subcategory_ids: string[];
+}
 
 const UpdateProductForm: React.FC<{ productId?: string }> = ({
   productId: propProductId,
@@ -51,6 +59,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const { productId: paramProductId } = useParams<{ productId: string }>();
   const productId = propProductId || paramProductId;
   const [showDialog, setShowDialog] = useState(false);
+  const [query, setQuery] = useState("");
 
   const productFromStore = useAppSelector((state) =>
     state.products.products.find((p) => p.id === productId)
@@ -59,13 +68,51 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
     (state) => state.products.selectedProduct
   );
 
-  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  // Categories/subcategories from global state
+  const categoriesState = useAppSelector((state) => state.categories);
+  const subCategoriesState = useAppSelector((state) => state.subCategories);
+
+  const [variants, setVariants] = useState<ExtendedProductVariant[]>([]);
   const [productName, setProductName] = useState<string>("");
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>(
     {}
   );
   const [savingName, setSavingName] = useState(false);
+
+  // Modals control
+  const [categoryModalIndex, setCategoryModalIndex] = useState<number | null>(
+    null
+  );
+  const [subCategoryModalIndex, setSubCategoryModalIndex] = useState<
+    number | null
+  >(null);
+
+  // Utility functions to get category/subcategory names
+  const getCategoryName = (id: string) =>
+    categoriesState.categories.find((c) => c.id === id)?.name || id;
+  const getSubCategoryName = (id: string) =>
+    subCategoriesState.subCategories.find((sc) => sc.id === id)?.name || id;
+
+  // Function to extract categories and subcategories from API response
+  const extractCategoriesFromVariant = (variant: any) => {
+    const categories: string[] = [];
+    const subcategories: string[] = [];
+
+    if (variant.categories && Array.isArray(variant.categories)) {
+      variant.categories.forEach((cat: any) => {
+        if (cat.parent_id === null) {
+          // This is a main category
+          categories.push(cat.id);
+        } else {
+          // This is a subcategory
+          subcategories.push(cat.id);
+        }
+      });
+    }
+
+    return { categories, subcategories };
+  };
 
   useEffect(() => {
     if (!productFromStore && productId) {
@@ -74,9 +121,21 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   }, [dispatch, productFromStore, productId]);
 
   useEffect(() => {
+    dispatch(fetchCategories({ page: 1, pageSize: 30, q: query }));
+  }, [dispatch, query]);
+
+  useEffect(() => {
     const prod = productFromStore || selectedProduct;
     if (prod && prod.product_variants) {
-      setVariants(prod.product_variants.map((v) => ({ ...v })));
+      const extendedVariants = prod.product_variants.map((v: any) => {
+        const { categories, subcategories } = extractCategoriesFromVariant(v);
+        return {
+          ...v,
+          category_ids: categories,
+          subcategory_ids: subcategories,
+        };
+      });
+      setVariants(extendedVariants);
       setProductName(prod.product_variants[0]?.name ?? "");
     }
   }, [productFromStore, selectedProduct]);
@@ -111,10 +170,10 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
     return valid;
   };
 
-  const updateVariant = <K extends keyof ProductVariant>(
+  const updateVariant = <K extends keyof ExtendedProductVariant>(
     index: number,
     field: K,
-    value: ProductVariant[K]
+    value: ExtendedProductVariant[K]
   ) => {
     let updated = [...variants];
     if (field === "default_variant" && value) {
@@ -137,6 +196,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
     }
     setVariants(updated);
   };
+
   const handleSaveProductName = async () => {
     if (!productName) return;
     setSavingName(true);
@@ -165,7 +225,6 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
       name: productName,
       product_id: productId ?? "",
     };
-    // Omit keys before sending to API
 
     try {
       if (!variant.id) {
@@ -184,6 +243,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
         );
         // Optionally: show toast
       } else {
+        // --- UPDATE ---
         const cleaned = omitKeys(variant, [
           "id",
           "product_id",
@@ -192,7 +252,6 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           "createdAt",
           "updatedAt",
         ]);
-        // --- UPDATE ---
         await dispatch(
           updateProductVariant({
             id: variant.id,
@@ -218,7 +277,13 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   };
 
   const handleAddVariant = () => {
-    setVariants([...variants, { ...defaultVariant(), name: productName }]);
+    const newVariant: ExtendedProductVariant = {
+      ...defaultVariant(),
+      name: productName,
+      category_ids: [],
+      subcategory_ids: [],
+    };
+    setVariants([...variants, newVariant]);
     setExpandedIndex(variants.length);
   };
 
@@ -360,6 +425,106 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                     onChange={(val) => updateVariant(index, "image", val)}
                   />
                 </div>
+
+                {/* Categories Section */}
+                <div className="mb-2 mt-4">
+                  <span>Select Categories</span>
+                </div>
+                <div className="flex items-center flex-wrap gap-2 mb-2 mt-2 px-1">
+                  {variant.category_ids.map((catId) => (
+                    <span
+                      key={catId}
+                      className="inline-flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold"
+                    >
+                     {getCategoryName(catId)}
+                      <button
+                        onClick={() => {
+                          updateVariant(
+                            index,
+                            "category_ids",
+                            variant.category_ids.filter((id) => id !== catId)
+                          );
+                          updateVariant(index, "subcategory_ids", []);
+                        }}
+                        className="ml-1 rounded hover:bg-blue-200 p-1"
+                        type="button"
+                      >
+                        <X size={14} />
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold hover:bg-blue-200"
+                    onClick={() => setCategoryModalIndex(index)}
+                  >
+                    <Plus size={14} className="mr-1" /> Add Categories
+                  </button>
+                </div>
+
+                {/* Category modal for this variant */}
+                <CategoriesModal
+                  open={categoryModalIndex === index}
+                  selectedCategoryIds={variant.category_ids}
+                  onClose={() => setCategoryModalIndex(null)}
+                  onSave={(ids) => {
+                    updateVariant(index, "category_ids", ids);
+                    setCategoryModalIndex(null);
+                  }}
+                />
+
+                {/* Subcategories Section */}
+                <div className="mb-2 mt-4">
+                  <span>Select Subcategories</span>
+                </div>
+                <div className="flex items-center flex-wrap gap-2 mb-2 mt-2 px-1">
+                  {variant.subcategory_ids?.map((subId) => (
+                    <span
+                      key={subId}
+                      className="inline-flex items-center bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold"
+                    >
+                      {getSubCategoryName(subId)}
+                      <button
+                        onClick={() =>
+                          updateVariant(
+                            index,
+                            "subcategory_ids",
+                            variant.subcategory_ids.filter((id) => id !== subId)
+                          )
+                        }
+                        className="ml-1 rounded hover:bg-green-200 p-1"
+                        type="button"
+                      >
+                        <X size={14} />
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold hover:bg-green-200"
+                    onClick={() => {
+                      if (variant.category_ids.length === 0) {
+                        alert("Please select category first");
+                      } else {
+                        setSubCategoryModalIndex(index);
+                      }
+                    }}
+                  >
+                    <Plus size={14} className="mr-1" /> Add Subcategories
+                  </button>
+                </div>
+
+                {/* SubCategory modal for this variant */}
+                <SubCategoriesModal
+                  open={subCategoryModalIndex === index}
+                  parentCategoryIds={variant.category_ids}
+                  selectedSubCategoryIds={variant.subcategory_ids}
+                  onClose={() => setSubCategoryModalIndex(null)}
+                  onSave={(ids) => {
+                    updateVariant(index, "subcategory_ids", ids);
+                    setSubCategoryModalIndex(null);
+                  }}
+                />
 
                 <div>
                   <Checkbox

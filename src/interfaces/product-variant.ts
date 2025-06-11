@@ -18,6 +18,8 @@ export interface ProductVariant {
   total_available_quantity: number;
   createdAt?: string;
   updatedAt?: string;
+  category_ids?: string[];
+  subcategory_ids?: string[];
 }
 export const defaultVariant = (): ProductVariant => ({
   id: "",
@@ -35,6 +37,8 @@ export const defaultVariant = (): ProductVariant => ({
   min_quantity: 1,
   max_quantity: 1,
   total_available_quantity: 0,
+  category_ids: [],
+  subcategory_ids: [],
 });
 
 export interface CreateProductVariant {
@@ -51,15 +55,17 @@ export interface CreateProductVariant {
   min_quantity?: number;
   max_quantity?: number;
   total_available_quantity: number;
-
+  category_ids?: string[];
+  subcategory_ids?: string[];
 }
 
-
 export type UpdateProductVariantPayload = Partial<
-  Omit<ProductVariant, "id" | "product_id" | "name" | "categories" | "createdAt" | "updatedAt">
+  Omit<
+    ProductVariant,
+    "id" | "product_id" | "name" | "categories" | "createdAt" | "updatedAt"
+  >
 >;
 
-
 export type CreateProductVariantPayload = Partial<
-  Omit<ProductVariant, "id"  | "categories" | "createdAt" | "updatedAt">
+  Omit<ProductVariant, "id" | "categories" | "createdAt" | "updatedAt">
 >;
