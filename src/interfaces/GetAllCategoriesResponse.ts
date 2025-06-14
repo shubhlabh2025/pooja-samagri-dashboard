@@ -1,7 +1,5 @@
-import type { SubCategories } from "./categories";
+import type { SubCategories } from "./subcategories";
 import type { PaginationMeta } from "./Pagination";
-
-
 
 export interface GetCategoriesResponse {
   success: boolean;

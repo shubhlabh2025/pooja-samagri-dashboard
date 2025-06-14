@@ -1,7 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Trash2, Search, X, ChevronDown, Edit2 } from "lucide-react";
+import {
+  Trash2,
+  Search,
+  X,
+  ChevronDown,
+  Edit2,
+  GripVertical,
+} from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
-import { fetchCategories, deleteCategory } from "@/slices/categorySlice";
+import {
+  fetchCategories,
+  deleteCategory,
+  updateCategory,
+} from "@/slices/categorySlice";
 import {
   fetchSubCategories,
   deleteSubCategory,
@@ -10,9 +21,16 @@ import Modal from "../Common/Modal";
 import CategoryForm from "@/pages/Category/CategoryForm";
 import SubCategoryForm from "@/pages/Category/SubCategoryForm";
 import DismissDialog from "../Common/DismissDialog";
+import { ProductSkeleton } from "../loadingSkeletons/productSkeleton";
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 30;
 const DEBOUNCE_MS = 200;
+
+interface DragState {
+  isDragging: boolean;
+  draggedItem: any | null;
+  dragOverIndex: number | null;
+}
 
 const CategoryListSection: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -27,6 +45,16 @@ const CategoryListSection: React.FC = () => {
   const [query, setQuery] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [showSubDialog, setShowSubDialog] = useState(false);
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
+  const [deleteSubItemId, setDeleteSubItemId] = useState<string | null>(null);
+
+  // Drag and Drop State
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    draggedItem: null,
+    dragOverIndex: null,
+  });
+  const [localCategories, setLocalCategories] = useState(categories);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -40,6 +68,11 @@ const CategoryListSection: React.FC = () => {
   );
   const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
   const [editSubCategory, setEditSubCategory] = useState<any>(null);
+
+  // Update local categories when categories from store change
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
 
   // Debounce search
   useEffect(() => {
@@ -60,10 +93,174 @@ const CategoryListSection: React.FC = () => {
   // Fetch subcategories on expand
   useEffect(() => {
     if (expandedCategoryId) {
-      
       dispatch(fetchSubCategories({ parent_id: [expandedCategoryId] }));
     }
   }, [expandedCategoryId, dispatch]);
+
+  // Drag and Drop Handlers
+  const handleDragStart = (
+    e: React.DragEvent,
+    category: any,
+    index: number
+  ) => {
+    setDragState({
+      isDragging: true,
+      draggedItem: category,
+      dragOverIndex: null,
+    });
+
+    // Set drag effect
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/html", "");
+
+    // Add some visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = "0.5";
+    }
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    // Reset visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = "1";
+    }
+
+    setDragState({
+      isDragging: false,
+      draggedItem: null,
+      dragOverIndex: null,
+    });
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+
+    if (dragState.dragOverIndex !== index) {
+      setDragState((prev) => ({
+        ...prev,
+        dragOverIndex: index,
+      }));
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear dragOverIndex if we're actually leaving the drop zone
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragState((prev) => ({
+        ...prev,
+        dragOverIndex: null,
+      }));
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+
+    if (!dragState.draggedItem) return;
+
+    const draggedIndex = localCategories.findIndex(
+      (cat) => cat.id === dragState.draggedItem.id
+    );
+
+    if (draggedIndex === -1 || draggedIndex === dropIndex) {
+      setDragState({
+        isDragging: false,
+        draggedItem: null,
+        dragOverIndex: null,
+      });
+      return;
+    }
+
+    // Create new array with reordered items
+    const newCategories = [...localCategories];
+    const [draggedItem] = newCategories.splice(draggedIndex, 1);
+    newCategories.splice(dropIndex, 0, draggedItem);
+
+    // Calculate new priority based on position
+    const calculateNewPriority = (
+      categories: any[],
+      targetIndex: number
+    ): number => {
+      const targetItem = categories[targetIndex];
+
+      // If moving to top (index 0)
+      if (targetIndex === 0) {
+        const nextItem = categories[1];
+        if (nextItem) {
+          return parseFloat(nextItem.priority) + 1000;
+        }
+        return 1000; // Default if no next item
+      }
+
+      // If moving to bottom (last index)
+      if (targetIndex === categories.length - 1) {
+        const prevItem = categories[targetIndex - 1];
+        if (prevItem) {
+          return parseFloat(prevItem.priority) / 2;
+        }
+        return 1000; // Default if no previous item
+      }
+
+      // If moving to middle, average the priorities of adjacent items
+      const prevItem = categories[targetIndex - 1];
+      const nextItem = categories[targetIndex + 1];
+
+      if (prevItem && nextItem) {
+        const prevPriority = parseFloat(prevItem.priority);
+        const nextPriority = parseFloat(nextItem.priority);
+        return (prevPriority + nextPriority) / 2;
+      }
+
+      // Fallback
+      return 1000;
+    };
+
+    // Calculate new priority for the dragged item
+    const newPriority = calculateNewPriority(newCategories, dropIndex);
+
+    // Update the dragged item's priority in the local array
+    const updatedCategories = newCategories.map((cat, index) =>
+      index === dropIndex ? { ...cat, priority: newPriority } : cat
+    );
+
+    // Update local state immediately for smooth UX
+    setLocalCategories(updatedCategories);
+
+    console.log(updatedCategories);
+
+    // Format priority with 10 decimal precision for backend
+
+    // Prepare data for backend update
+    const draggedItemData = updatedCategories.find(
+      (cat) => cat.id === draggedItem.id
+    );
+
+    setDragState({
+      isDragging: false,
+      draggedItem: null,
+      dragOverIndex: null,
+    });
+
+    // Or using destructuring to create a new object
+
+    // Dispatch action to update backend
+    // Note: You'll need to implement this action in your categorySlice
+    await dispatch(
+      updateCategory({
+        id: draggedItem.id,
+        updates: {
+          name: draggedItem.name,
+          priority: draggedItemData?.priority,
+          image: draggedItemData?.image,
+        },
+      })
+    );
+
+   await dispatch(
+      fetchCategories({ page: currentPage, pageSize: PAGE_SIZE, q: query })
+    );
+  };
 
   // Pagination logic
   const totalPages = pagination?.totalPages || 1;
@@ -81,6 +278,7 @@ const CategoryListSection: React.FC = () => {
   const subCategories = subCategoryState.subCategories.filter(
     (s) => s.parent_id === expandedCategoryId
   );
+
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       {/* Top Bar */}
@@ -97,6 +295,7 @@ const CategoryListSection: React.FC = () => {
           )}
         </div>
       </div>
+
       {/* Search Bar */}
       {showSearch && (
         <div className="flex gap-2 px-6 py-2 bg-gray-50 border-b">
@@ -130,28 +329,47 @@ const CategoryListSection: React.FC = () => {
           </button>
         </div>
       )}
+
       {/* Loading & Error */}
       {status === "loading" && (
         <div>
           {[...Array(PAGE_SIZE)].map((_, i) => (
-            <div
-              key={i}
-              className="h-16 flex items-center justify-center text-gray-400"
-            >
-              Loading...
-            </div>
+            <ProductSkeleton key={i} />
           ))}
         </div>
       )}
       {status === "failed" && (
         <div className="px-6 py-4 text-red-500">{error}</div>
       )}
+
       {/* Category List */}
       <div className="divide-y">
-        {categories.map((category) => (
+        {localCategories.map((category, index) => (
           <div key={category.id} className="group relative">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3 cursor-pointer">
+            <div
+              draggable
+              onDragStart={(e) => handleDragStart(e, category, index)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              className={`flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3 cursor-move transition-all duration-200 ${
+                dragState.dragOverIndex === index
+                  ? "border-t-2 border-blue-500 bg-blue-50"
+                  : ""
+              } ${
+                dragState.isDragging &&
+                dragState.draggedItem?.id === category.id
+                  ? "opacity-50 transform rotate-1"
+                  : ""
+              }`}
+            >
               <div className="flex items-center gap-4">
+                {/* Drag Handle */}
+                <div className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing">
+                  <GripVertical className="w-4 h-4" />
+                </div>
+
                 <img
                   src={category.image}
                   alt={category.name}
@@ -163,9 +381,11 @@ const CategoryListSection: React.FC = () => {
                   </div>
                 </div>
               </div>
+
               <div className="flex flex-wrap sm:flex-row items-center justify-end gap-2 sm:gap-6 w-full sm:w-auto">
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setEditCategory(category);
                     setCategoryModal(true);
                   }}
@@ -174,39 +394,33 @@ const CategoryListSection: React.FC = () => {
                 >
                   <Edit2 />
                 </button>
+
                 <button
                   className="text-red-600 hover:text-red-800 transition"
-                  onClick={() => setShowDialog(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteItemId(category.id);
+                    setShowDialog(true);
+                  }}
                 >
-                  {" "}
                   <Trash2 />
                 </button>
-                <DismissDialog
-                  open={showDialog}
-                  title="Delete Category"
-                  message="Are you sure you want to delete this Category?."
-                  confirmLabel="Delete"
-                  cancelLabel="Cancel"
-                  onConfirm={() => {
-                    dispatch(deleteCategory(category.id));
-                    setShowDialog(false);
-                  }}
-                  onCancel={() => setShowDialog(false)}
-                />
+
                 <ChevronDown
-                  className="text-gray-500 cursor-pointer"
-                  onClick={() =>
+                  className="text-gray-500 cursor-pointer hover:text-gray-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setExpandedCategoryId(
                       expandedCategoryId === category.id ? null : category.id
-                    )
-                  }
+                    );
+                  }}
                 />
               </div>
             </div>
-            {/* Expanded subcategory list/modal */}
+
+            {/* Expanded subcategory list */}
             {expandedCategoryId === category.id && (
               <div className="ml-14 mr-14 mt-3 space-y-2">
-                {/* Subcategory list */}
                 {subCategoryState.status === "loading" ? (
                   <div className="px-4 py-2 text-gray-400">Loading...</div>
                 ) : (
@@ -241,22 +455,13 @@ const CategoryListSection: React.FC = () => {
 
                             <button
                               className="text-red-600 hover:text-red-800 transition"
-                              onClick={() => setShowSubDialog(true)}
+                              onClick={() => {
+                                setDeleteSubItemId(sub.id);
+                                setShowSubDialog(true);
+                              }}
                             >
                               <Trash2 />
                             </button>
-                            <DismissDialog
-                              open={showSubDialog}
-                              title="Delete Subcategory"
-                              message="Are you sure you want to delete this Subcategory?"
-                              confirmLabel="Delete"
-                              cancelLabel="Cancel"
-                              onConfirm={() => {
-                                dispatch(deleteSubCategory(sub.id));
-                                setShowSubDialog(false);
-                              }}
-                              onCancel={() => setShowSubDialog(false)}
-                            />
                           </div>
                         </div>
                       ))
@@ -267,6 +472,7 @@ const CategoryListSection: React.FC = () => {
                     )}
                   </>
                 )}
+
                 {/* Add New Subcategory Button */}
                 <div className="w-full flex justify-center my-6">
                   <div
@@ -284,6 +490,7 @@ const CategoryListSection: React.FC = () => {
                     </span>
                   </div>
                 </div>
+
                 {showSubCategoryModal && (
                   <Modal
                     onClose={() => {
@@ -307,6 +514,7 @@ const CategoryListSection: React.FC = () => {
           </div>
         ))}
       </div>
+
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex flex-wrap items-center justify-center gap-2 py-4">
@@ -369,6 +577,47 @@ const CategoryListSection: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Delete Category Dialog */}
+      <DismissDialog
+        open={showDialog}
+        title="Delete Category"
+        message="Are you sure you want to delete this Category?"
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          if (deleteItemId) {
+            dispatch(deleteCategory(deleteItemId));
+          }
+          setShowDialog(false);
+          setDeleteItemId(null);
+        }}
+        onCancel={() => {
+          setShowDialog(false);
+          setDeleteItemId(null);
+        }}
+      />
+
+      {/* Delete Subcategory Dialog */}
+      <DismissDialog
+        open={showSubDialog}
+        title="Delete Subcategory"
+        message="Are you sure you want to delete this Subcategory?"
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          if (deleteSubItemId) {
+            dispatch(deleteSubCategory(deleteSubItemId));
+          }
+          setShowSubDialog(false);
+          setDeleteSubItemId(null);
+        }}
+        onCancel={() => {
+          setShowSubDialog(false);
+          setDeleteSubItemId(null);
+        }}
+      />
+
       {/* Category Modal (for edit/create) */}
       {showCategoryModal && (
         <Modal

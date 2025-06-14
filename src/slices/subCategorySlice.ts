@@ -1,7 +1,7 @@
 // src/slices/subCategorySlice.ts
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { SubCategories } from "@/interfaces/categories"; // or whatever your SubCategory type is
+import type { SubCategories } from "@/interfaces/subcategories"; // or whatever your SubCategory type is
 import type { GetCategoriesResponse } from "@/interfaces/GetAllCategoriesResponse";
 import { createSubCategoryApi } from "../api/subCategoriesApi";
 import axiosClient from "@/api/apiClient";

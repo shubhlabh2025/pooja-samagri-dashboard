@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { createCategoryApi } from "../api/categoryApi"; // Adjust this import as per your file structure
 import axiosClient from "@/api/apiClient";
-import type { SubCategories } from "@/interfaces/categories";
+import type { SubCategories } from "@/interfaces/subcategories";
 import type { PaginationMeta } from "@/interfaces/Pagination";
 
 // 1. API client instance

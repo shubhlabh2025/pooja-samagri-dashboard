@@ -1,4 +1,4 @@
-import type { SubCategories } from "./categories";
+import type { SubCategories } from "./subcategories";
 
 export interface ProductVariant {
   id: string;

@@ -4,4 +4,5 @@ export interface SubCategories {
   name: string;
   image: string;
   parent_id: string | null;
+  priority: number | string;
 }

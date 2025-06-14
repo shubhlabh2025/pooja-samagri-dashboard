@@ -12,6 +12,8 @@ export const createCategoryApi = (client: AxiosInstance) => ({
       `page=${page}`,
       `limit=${pageSize}`,
       q ? `q=${encodeURIComponent(q)}` : "",
+      `sort_by=priority`,
+      `sort_order=DESC`
     ]
       .filter(Boolean)
       .join("&");
