@@ -5,6 +5,7 @@ interface InputProps {
   value: string;
   type?: string;
   error?: string;
+  disabled?: boolean;
   placeholder?: string; // <-- add this line
   onChange: (value: string) => void;
 }
@@ -14,6 +15,7 @@ const Input: React.FC<InputProps> = ({
   value,
   type = "text",
   error,
+  disabled = false,
   placeholder, // <-- add this line
   onChange,
 }) => {
@@ -23,6 +25,7 @@ const Input: React.FC<InputProps> = ({
         {label}
       </label>
       <input
+        disabled={disabled}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

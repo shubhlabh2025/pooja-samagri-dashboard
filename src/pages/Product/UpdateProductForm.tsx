@@ -21,6 +21,9 @@ import DismissDialog from "@/components/Common/DismissDialog";
 import CategoriesModal from "@/components/Category/CategoriesModalComponent";
 import SubCategoriesModal from "@/components/Category/SubCategoryModalComponent";
 import { fetchCategories } from "@/slices/categorySlice";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import type { SubCategories } from "@/interfaces/subcategories";
 
 const productVariantSchema = z
   .object({
@@ -59,7 +62,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const { productId: paramProductId } = useParams<{ productId: string }>();
   const productId = propProductId || paramProductId;
   const [showDialog, setShowDialog] = useState(false);
-  const [query, setQuery] = useState("");
+  const [query] = useState("");
 
   const productFromStore = useAppSelector((state) =>
     state.products.products.find((p) => p.id === productId)
@@ -95,12 +98,12 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
     subCategoriesState.subCategories.find((sc) => sc.id === id)?.name || id;
 
   // Function to extract categories and subcategories from API response
-  const extractCategoriesFromVariant = (variant: any) => {
+  const extractCategoriesFromVariant = (variant: ProductVariant) => {
     const categories: string[] = [];
     const subcategories: string[] = [];
 
     if (variant.categories && Array.isArray(variant.categories)) {
-      variant.categories.forEach((cat: any) => {
+      variant.categories.forEach((cat: SubCategories) => {
         if (cat.parent_id === null) {
           // This is a main category
           categories.push(cat.id);
@@ -127,7 +130,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   useEffect(() => {
     const prod = productFromStore || selectedProduct;
     if (prod && prod.product_variants) {
-      const extendedVariants = prod.product_variants.map((v: any) => {
+      const extendedVariants = prod.product_variants.map((v: ProductVariant) => {
         const { categories, subcategories } = extractCategoriesFromVariant(v);
         return {
           ...v,
@@ -235,12 +238,13 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           "createdAt",
           "updatedAt",
         ]);
-        console.log(variant);
         const result = await dispatch(createProductVariant(cleaned)).unwrap();
         // Now update the local state with new id
         setVariants((prev) =>
           prev.map((v, i) => (i === index ? { ...v, ...result } : v))
         );
+        toast.success("Variant created successfully");
+
         // Optionally: show toast
       } else {
         // --- UPDATE ---
@@ -258,6 +262,10 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
             updates: cleaned,
           })
         );
+        toast.success("Variant updated successfully");
+        console.log("toast triger");
+        // Navigate back after a short delay (optional)
+        setTimeout(() => navigate(-1), 1000);
         // Optionally: show toast
       }
     } catch (error) {
@@ -317,7 +325,18 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           + Create Variant
         </button>
       </div>
-
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <div className="flex items-end gap-3 mb-8">
         <Input
           label="Product Name"
@@ -436,7 +455,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                       key={catId}
                       className="inline-flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold"
                     >
-                     {getCategoryName(catId)}
+                      {getCategoryName(catId)}
                       <button
                         onClick={() => {
                           updateVariant(

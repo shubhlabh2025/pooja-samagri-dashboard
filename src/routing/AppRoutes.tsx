@@ -11,8 +11,10 @@ import CustomerPage from "@/pages/Customers";
 import CustomerDetailSection from "@/pages/Customers/CustomerDetailSection";
 import OrderDetailSection from "@/pages/Orders/OrderDetailSection";
 import ConfigurationSection from "@/pages/Configurations";
+import UpdateProductForm from "@/pages/Product/UpdateProductForm";
 import OffersPage from "@/pages/Configurations/OffersPage";
-import UpdateProductForm from "@/pages/Product/updateProductForm";
+import CreateOfferPage from "@/pages/Configurations/CreateOfferPage";
+import UpdateOfferPage from "@/pages/Configurations/UpdateOfferPage";
 
 const AppRoutes = () => (
   <Routes>
@@ -108,6 +110,25 @@ const AppRoutes = () => (
         </DashboardLayout>
       }
     />
+    <Route
+      path="/createOffers"
+      element={
+        <DashboardLayout>
+          <CreateOfferPage />
+        </DashboardLayout>
+      }
+    />
+    
+        <Route
+      path="/updateOffer/:offerId"
+      element={
+        <DashboardLayout>
+          <UpdateOfferPage />
+        </DashboardLayout>
+      }
+    />
+    
   </Routes>
+  
 );
 export default AppRoutes;

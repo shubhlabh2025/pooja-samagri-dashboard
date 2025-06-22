@@ -54,7 +54,7 @@ const ProductListSection: React.FC = () => {
   const pageButtons = [];
   const MAX_BUTTONS = 5;
   let startPage = Math.max(1, currentPage - Math.floor(MAX_BUTTONS / 2));
-  let endPage = Math.min(totalPages, startPage + MAX_BUTTONS - 1);
+  const endPage = Math.min(totalPages, startPage + MAX_BUTTONS - 1);
 
   if (endPage - startPage < MAX_BUTTONS - 1) {
     startPage = Math.max(1, endPage - MAX_BUTTONS + 1);

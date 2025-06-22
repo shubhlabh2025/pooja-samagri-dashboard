@@ -9,10 +9,8 @@ import Input from "@/components/Form/Input";
 import Toggle from "@/components/Form/Toggle";
 import {
   ArrowRight,
-  Check,
   ChevronDown,
   ChevronUp,
-  Plus,
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -21,10 +19,9 @@ const configurationSchema = z.object({
   phone_number: z.string().min(10, "Phone number is required"),
   whatsapp_number: z.string().min(10, "WhatsApp number is required"),
   store_status: z.boolean(),
-  min_order_amount: z.number().min(0),
-  delivery_charge: z.number().min(0),
+  min_order_amount: z.number().min(0).optional(),
+  delivery_charge: z.number().min(0).optional(),
   delivery_time: z.number().min(1),
-  delivery_radius: z.number().min(1),
   announcement_text: z.string().optional(),
   ad_banners: z
     .array(
@@ -46,7 +43,6 @@ const defaultConfig: ConfigurationFormData = {
   min_order_amount: 0,
   delivery_charge: 0,
   delivery_time: 1,
-  delivery_radius: 1,
   announcement_text: "",
   ad_banners: [],
 };
@@ -93,7 +89,6 @@ const ConfigurationSection = () => {
         min_order_amount: configState.data.min_order_amount ?? 0,
         delivery_charge: configState.data.delivery_charge ?? 0,
         delivery_time: configState.data.delivery_time ?? 1,
-        delivery_radius: configState.data.delivery_radius ?? 1,
         announcement_text: configState.data.announcement_text || "",
         ad_banners: configState.data.ad_banners || [],
       });
@@ -173,7 +168,7 @@ const ConfigurationSection = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // if (!validate()) return;
+     if (!validate()) return;
     console.log(form);
     await dispatch(updateConfiguration(form));
   };
@@ -214,13 +209,13 @@ const ConfigurationSection = () => {
           <Input
             label="Minimum Order Amount in Rupee"
             type="number"
-            value={form.min_order_amount.toString()}
+            value={form.min_order_amount?.toString() ?? "0"}
             onChange={(val) => updateField("min_order_amount", +val)}
           />
           <Input
             label="Delivery charge in Rupee"
             type="number"
-            value={form.delivery_charge.toString()}
+            value={form.delivery_charge?.toString() ?? "0"}
             onChange={(val) => updateField("delivery_charge", +val)}
           />
           <Input
@@ -229,12 +224,7 @@ const ConfigurationSection = () => {
             value={form.delivery_time.toString()}
             onChange={(val) => updateField("delivery_time", +val)}
           />
-          <Input
-            label="Delivery Radius (in km)"
-            type="number"
-            value={form.delivery_radius.toString()}
-            onChange={(val) => updateField("delivery_radius", +val)}
-          />
+      
         </div>
 
         {/* Actions List */}
@@ -315,13 +305,7 @@ const ConfigurationSection = () => {
                     setAdBannerDraft((d) => ({ ...d, image: val }))
                   }
                 />
-                <Input
-                  label="Action"
-                  value={adBannerDraft.action}
-                  onChange={(val) =>
-                    setAdBannerDraft((d) => ({ ...d, action: val }))
-                  }
-                />
+           
                 <div className="flex h-full flex-col self-end">
                   <button
                     type="button"

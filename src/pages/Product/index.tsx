@@ -1,9 +1,8 @@
-import { useEffect, type FC } from "react";
+import { type FC } from "react";
 import ProductListSection from "@/components/products/ProductListSection";
 import { SkeletonTheme } from "react-loading-skeleton";
 
 import { Link } from "react-router";
-import { fetchCategories } from "@/slices/categorySlice";
 
 const Productpage: FC = () => {
 
