@@ -23,7 +23,7 @@ export const fetchConfiguration = createAsyncThunk(
   async () => {
     const response = await configurationApi.getConfiguration();
     return response.data.data;
-  }
+  },
 );
 
 export const updateConfiguration = createAsyncThunk(
@@ -31,7 +31,7 @@ export const updateConfiguration = createAsyncThunk(
   async (updates: Partial<ConfigurationModel>) => {
     const response = await configurationApi.updateConfiguration(updates);
     return response.data.data;
-  }
+  },
 );
 
 const configurationSlice = createSlice({

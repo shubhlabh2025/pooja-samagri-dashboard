@@ -69,12 +69,12 @@ const offerSchema = z
     {
       message: "End date must be greater than start date",
       path: ["end_date"], // Attach error to `end_date` field
-    }
+    },
   );
 const CreateOfferPage = () => {
   const [form, setForm] = useState<Offer>(defaultOffer);
   const [errors, setErrors] = useState<Partial<Record<keyof Offer, string>>>(
-    {}
+    {},
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFixed, setIsFixed] = useState(false);
@@ -120,7 +120,7 @@ const CreateOfferPage = () => {
         form.discount_type === "percentage"
           ? +form.max_discount_value
           : undefined,
-      min_order_value:+form.min_order_value,    
+      min_order_value: +form.min_order_value,
       start_date: form.start_date,
       end_date: form.end_date,
       is_active: form.offer_status,
@@ -204,7 +204,7 @@ const CreateOfferPage = () => {
               onChange={(e) => {
                 updateField(
                   "discount_type",
-                  e.target.value as Offer["discount_type"]
+                  e.target.value as Offer["discount_type"],
                 );
                 console.log("offer type");
                 console.log(e.target.value);
@@ -284,7 +284,6 @@ const CreateOfferPage = () => {
               updateField("end_date", combinedDateTime ?? "");
             }}
           />
-   
         </div>
 
         <TextArea

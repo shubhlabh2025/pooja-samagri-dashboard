@@ -1,5 +1,5 @@
-import OffersListSection from '@/components/Offers/OffersListSection';
-import { useNavigate } from 'react-router';
+import OffersListSection from "@/components/Offers/OffersListSection";
+import { useNavigate } from "react-router";
 
 const OffersPage = () => {
   const navigate = useNavigate();
@@ -11,20 +11,18 @@ const OffersPage = () => {
         <div
           className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition cursor-pointer"
           onClick={() => {
-              navigate("/createOffers")
+            navigate("/createOffers");
           }}
         >
           <span>+ Add Offers</span>
         </div>
       </div>
 
-      <OffersListSection/>
+      <OffersListSection />
 
       {/* Modal */}
-     
     </div>
   );
-  
-}
+};
 
-export default OffersPage
+export default OffersPage;

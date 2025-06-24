@@ -7,6 +7,7 @@ export interface Coupon {
   min_discount_value: number | null;
   max_discount_value: number | null;
   min_order_value: number;
+  offer_type?: "NEW_USER" | "ALL_USER";
   start_date: string;
   end_date: string;
   is_active: boolean;
@@ -30,7 +31,7 @@ export interface CreateCoupon {
   description: string;
   min_discount_value?: number;
   max_discount_value?: number;
-  min_order_value:number;
+  min_order_value: number;
   start_date: string;
   end_date: string;
   is_active: boolean;

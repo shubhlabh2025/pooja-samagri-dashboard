@@ -21,7 +21,7 @@ const CategoriesModal: React.FC<CategoriesModalProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { categories, pagination, status } = useAppSelector(
-    (state) => state.categories
+    (state) => state.categories,
   );
   const [searchText, setSearchText] = useState("");
   const [query, setQuery] = useState("");
@@ -94,7 +94,7 @@ const CategoriesModal: React.FC<CategoriesModalProps> = ({
                   setSelectedIds((prev) =>
                     e.target.checked
                       ? [...prev, cat.id]
-                      : prev.filter((id) => id !== cat.id)
+                      : prev.filter((id) => id !== cat.id),
                   );
                 }}
               />

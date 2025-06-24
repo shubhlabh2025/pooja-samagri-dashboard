@@ -3,6 +3,7 @@ import { createCategoryApi } from "../api/categoryApi"; // Adjust this import as
 import axiosClient from "@/api/apiClient";
 import type { SubCategories } from "@/interfaces/subcategories";
 import type { PaginationMeta } from "@/interfaces/Pagination";
+import type { CreateCategoryPayload } from "@/interfaces/category";
 
 // 1. API client instance
 const categoryApi = createCategoryApi(axiosClient);
@@ -31,24 +32,24 @@ export const fetchCategories = createAsyncThunk(
     const categories = response.data.data;
     const pagination = response.data.meta;
     return { categories, pagination };
-  }
+  },
 );
 
 export const createCategory = createAsyncThunk(
   "categories/create",
-  async (payload: { name: string; image: string }) => {
+  async (payload: CreateCategoryPayload) => {
     const response = await categoryApi.createCategory(payload);
     // you might want to return response.data.data if your API returns the new category
     return response.data.data as SubCategories;
-  }
+  },
 );
 
 export const updateCategory = createAsyncThunk(
   "categories/update",
-  async ({ id, updates }: { id: string; updates: any }) => {
+  async ({ id, updates }: { id: string; updates: CreateCategoryPayload }) => {
     const response = await categoryApi.updateCategory(id, updates);
     return response.data; // this will now be Category type
-  }
+  },
 );
 
 export const deleteCategory = createAsyncThunk(
@@ -56,7 +57,7 @@ export const deleteCategory = createAsyncThunk(
   async (id: string) => {
     await categoryApi.deleteCategory(id);
     return id;
-  }
+  },
 );
 
 // 4. Slice
@@ -97,7 +98,7 @@ const categorySlice = createSlice({
       })
       .addCase(deleteCategory.fulfilled, (state, action) => {
         state.categories = state.categories.filter(
-          (c) => c.id !== action.payload
+          (c) => c.id !== action.payload,
         );
       });
   },

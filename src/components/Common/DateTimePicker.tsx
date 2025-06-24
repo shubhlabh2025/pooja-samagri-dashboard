@@ -28,7 +28,7 @@ export function DateTimePicker({
 }: DateTimeProps) {
   const [open, setOpen] = React.useState(false);
   const [date, setDate] = React.useState<Date | undefined>(
-    value ? new Date(value) : new Date()
+    value ? new Date(value) : new Date(),
   );
 
   const extractTime = (iso?: string) => {
@@ -42,7 +42,7 @@ export function DateTimePicker({
   const getInitialTime = () => {
     const now = new Date();
     return `${String(now.getHours()).padStart(2, "0")}:${String(
-      now.getMinutes()
+      now.getMinutes(),
     ).padStart(2, "0")}`;
   };
 
@@ -102,15 +102,16 @@ export function DateTimePicker({
                 <ChevronDownIcon />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+            <PopoverContent
+              className="w-auto overflow-hidden p-0"
+              align="start"
+            >
               <Calendar
                 mode="single"
                 selected={date}
                 captionLayout="dropdown"
                 onSelect={handleDateChange}
-                disabled={(d) =>
-                  d < new Date(new Date().setHours(0, 0, 0, 0))
-                }
+                disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
               />
             </PopoverContent>
           </Popover>

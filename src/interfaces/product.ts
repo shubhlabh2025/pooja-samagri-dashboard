@@ -6,3 +6,7 @@ export interface Product {
   updatedAt: string;
   product_variants: ProductVariant[];
 }
+
+export interface UpdateProductName {
+  name: string;
+}

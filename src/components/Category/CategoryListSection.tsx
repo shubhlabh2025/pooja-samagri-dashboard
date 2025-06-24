@@ -26,25 +26,61 @@ import { ProductSkeleton } from "../loadingSkeletons/productSkeleton";
 const PAGE_SIZE = 30;
 const DEBOUNCE_MS = 200;
 
+// Type definitions
+interface Category {
+  id: string;
+  name: string;
+  image: string;
+  priority: string | number;
+}
+
+interface SubCategory {
+  id: string;
+  name: string;
+  image: string;
+  parent_id: string;
+}
+
 interface DragState {
   isDragging: boolean;
-  draggedItem: any | null;
+  draggedItem: Category | null;
   dragOverIndex: number | null;
+}
+
+interface Pagination {
+  totalPages: number;
+  currentPage: number;
+  totalItems: number;
+}
+
+interface CategoryState {
+  categories: Category[];
+  status: "idle" | "loading" | "succeeded" | "failed";
+  error: string | null;
+  pagination: Pagination | null;
+}
+
+interface SubCategoryState {
+  subCategories: SubCategory[];
+  status: "idle" | "loading" | "succeeded" | "failed";
+  error: string | null;
 }
 
 const CategoryListSection: React.FC = () => {
   const dispatch = useAppDispatch();
   const { categories, status, error, pagination } = useAppSelector(
-    (state) => state.categories
-  );
-  const subCategoryState = useAppSelector((state) => state.subCategories);
+    (state) => state.categories,
+  ) as CategoryState;
+  const subCategoryState = useAppSelector(
+    (state) => state.subCategories,
+  ) as SubCategoryState;
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [query, setQuery] = useState("");
-  const [showDialog, setShowDialog] = useState(false);
-  const [showSubDialog, setShowSubDialog] = useState(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [searchText, setSearchText] = useState<string>("");
+  const [query, setQuery] = useState<string>("");
+  const [showDialog, setShowDialog] = useState<boolean>(false);
+  const [showSubDialog, setShowSubDialog] = useState<boolean>(false);
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
   const [deleteSubItemId, setDeleteSubItemId] = useState<string | null>(null);
 
@@ -54,20 +90,24 @@ const CategoryListSection: React.FC = () => {
     draggedItem: null,
     dragOverIndex: null,
   });
-  const [localCategories, setLocalCategories] = useState(categories);
+  const [localCategories, setLocalCategories] =
+    useState<Category[]>(categories);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Edit Modal
-  const [editCategory, setEditCategory] = useState<any>(null);
-  const [showCategoryModal, setCategoryModal] = useState(false);
+  const [editCategory, setEditCategory] = useState<Category | null>(null);
+  const [showCategoryModal, setCategoryModal] = useState<boolean>(false);
 
   // Subcategory modal
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(
-    null
+    null,
   );
-  const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
-  const [editSubCategory, setEditSubCategory] = useState<any>(null);
+  const [showSubCategoryModal, setShowSubCategoryModal] =
+    useState<boolean>(false);
+  const [editSubCategory, setEditSubCategory] = useState<SubCategory | null>(
+    null,
+  );
 
   // Update local categories when categories from store change
   useEffect(() => {
@@ -86,7 +126,7 @@ const CategoryListSection: React.FC = () => {
   // Fetch categories
   useEffect(() => {
     dispatch(
-      fetchCategories({ page: currentPage, pageSize: PAGE_SIZE, q: query })
+      fetchCategories({ page: currentPage, pageSize: PAGE_SIZE, q: query }),
     );
   }, [dispatch, currentPage, query]);
 
@@ -99,9 +139,8 @@ const CategoryListSection: React.FC = () => {
 
   // Drag and Drop Handlers
   const handleDragStart = (
-    e: React.DragEvent,
-    category: any,
-    index: number
+    e: React.DragEvent<HTMLDivElement>,
+    category: Category,
   ) => {
     setDragState({
       isDragging: true,
@@ -114,16 +153,14 @@ const CategoryListSection: React.FC = () => {
     e.dataTransfer.setData("text/html", "");
 
     // Add some visual feedback
-    if (e.currentTarget instanceof HTMLElement) {
-      e.currentTarget.style.opacity = "0.5";
-    }
+    const target = e.currentTarget as HTMLElement;
+    target.style.opacity = "0.5";
   };
 
-  const handleDragEnd = (e: React.DragEvent) => {
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
     // Reset visual feedback
-    if (e.currentTarget instanceof HTMLElement) {
-      e.currentTarget.style.opacity = "1";
-    }
+    const target = e.currentTarget as HTMLElement;
+    target.style.opacity = "1";
 
     setDragState({
       isDragging: false,
@@ -132,7 +169,10 @@ const CategoryListSection: React.FC = () => {
     });
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleDragOver = (
+    e: React.DragEvent<HTMLDivElement>,
+    index: number,
+  ) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
 
@@ -144,9 +184,10 @@ const CategoryListSection: React.FC = () => {
     }
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     // Only clear dragOverIndex if we're actually leaving the drop zone
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+    const relatedTarget = e.relatedTarget as Node | null;
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
       setDragState((prev) => ({
         ...prev,
         dragOverIndex: null,
@@ -154,13 +195,16 @@ const CategoryListSection: React.FC = () => {
     }
   };
 
-  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+  const handleDrop = async (
+    e: React.DragEvent<HTMLDivElement>,
+    dropIndex: number,
+  ) => {
     e.preventDefault();
 
     if (!dragState.draggedItem) return;
 
     const draggedIndex = localCategories.findIndex(
-      (cat) => cat.id === dragState.draggedItem.id
+      (cat) => cat.id === dragState.draggedItem!.id,
     );
 
     if (draggedIndex === -1 || draggedIndex === dropIndex) {
@@ -179,16 +223,14 @@ const CategoryListSection: React.FC = () => {
 
     // Calculate new priority based on position
     const calculateNewPriority = (
-      categories: any[],
-      targetIndex: number
+      categories: Category[],
+      targetIndex: number,
     ): number => {
-      const targetItem = categories[targetIndex];
-
       // If moving to top (index 0)
       if (targetIndex === 0) {
         const nextItem = categories[1];
         if (nextItem) {
-          return parseFloat(nextItem.priority) + 1000;
+          return parseFloat(nextItem.priority.toString()) + 1000;
         }
         return 1000; // Default if no next item
       }
@@ -197,7 +239,7 @@ const CategoryListSection: React.FC = () => {
       if (targetIndex === categories.length - 1) {
         const prevItem = categories[targetIndex - 1];
         if (prevItem) {
-          return parseFloat(prevItem.priority) / 2;
+          return parseFloat(prevItem.priority.toString()) / 2;
         }
         return 1000; // Default if no previous item
       }
@@ -207,8 +249,8 @@ const CategoryListSection: React.FC = () => {
       const nextItem = categories[targetIndex + 1];
 
       if (prevItem && nextItem) {
-        const prevPriority = parseFloat(prevItem.priority);
-        const nextPriority = parseFloat(nextItem.priority);
+        const prevPriority = parseFloat(prevItem.priority.toString());
+        const nextPriority = parseFloat(nextItem.priority.toString());
         return (prevPriority + nextPriority) / 2;
       }
 
@@ -221,7 +263,7 @@ const CategoryListSection: React.FC = () => {
 
     // Update the dragged item's priority in the local array
     const updatedCategories = newCategories.map((cat, index) =>
-      index === dropIndex ? { ...cat, priority: newPriority } : cat
+      index === dropIndex ? { ...cat, priority: newPriority } : cat,
     );
 
     // Update local state immediately for smooth UX
@@ -229,11 +271,9 @@ const CategoryListSection: React.FC = () => {
 
     console.log(updatedCategories);
 
-    // Format priority with 10 decimal precision for backend
-
     // Prepare data for backend update
     const draggedItemData = updatedCategories.find(
-      (cat) => cat.id === draggedItem.id
+      (cat) => cat.id === draggedItem.id,
     );
 
     setDragState({
@@ -242,42 +282,108 @@ const CategoryListSection: React.FC = () => {
       dragOverIndex: null,
     });
 
-    // Or using destructuring to create a new object
-
     // Dispatch action to update backend
-    // Note: You'll need to implement this action in your categorySlice
-    await dispatch(
-      updateCategory({
-        id: draggedItem.id,
-        updates: {
-          name: draggedItem.name,
-          priority: draggedItemData?.priority,
-          image: draggedItemData?.image,
-        },
-      })
-    );
+    if (draggedItemData) {
+      await dispatch(
+        updateCategory({
+          id: draggedItem.id,
+          updates: {
+            name: draggedItem.name,
+            priority: draggedItemData.priority,
+            image: draggedItemData.image,
+          },
+        }),
+      );
 
-   await dispatch(
-      fetchCategories({ page: currentPage, pageSize: PAGE_SIZE, q: query })
-    );
+      await dispatch(
+        fetchCategories({ page: currentPage, pageSize: PAGE_SIZE, q: query }),
+      );
+    }
   };
 
   // Pagination logic
   const totalPages = pagination?.totalPages || 1;
   const MAX_BUTTONS = 5;
   let startPage = Math.max(1, currentPage - Math.floor(MAX_BUTTONS / 2));
-  let endPage = Math.min(totalPages, startPage + MAX_BUTTONS - 1);
+  const endPage = Math.min(totalPages, startPage + MAX_BUTTONS - 1);
   if (endPage - startPage < MAX_BUTTONS - 1) {
     startPage = Math.max(1, endPage - MAX_BUTTONS + 1);
   }
 
-  const pageButtons = [];
+  const pageButtons: number[] = [];
   for (let i = startPage; i <= endPage; i++) pageButtons.push(i);
 
   // Get subcategories for expanded category
   const subCategories = subCategoryState.subCategories.filter(
-    (s) => s.parent_id === expandedCategoryId
+    (s) => s.parent_id === expandedCategoryId,
   );
+
+  const handleEditCategory = (category: Category) => {
+    setEditCategory(category);
+    setCategoryModal(true);
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    setDeleteItemId(categoryId);
+    setShowDialog(true);
+  };
+
+  const handleEditSubCategory = (subCategory: SubCategory) => {
+    setEditSubCategory(subCategory);
+    setShowSubCategoryModal(true);
+  };
+
+  const handleDeleteSubCategory = (subCategoryId: string) => {
+    setDeleteSubItemId(subCategoryId);
+    setShowSubDialog(true);
+  };
+
+  const handleExpandCategory = (categoryId: string) => {
+    setExpandedCategoryId(
+      expandedCategoryId === categoryId ? null : categoryId,
+    );
+  };
+
+  const handleConfirmDeleteCategory = () => {
+    if (deleteItemId) {
+      dispatch(deleteCategory(deleteItemId));
+    }
+    setShowDialog(false);
+    setDeleteItemId(null);
+  };
+
+  const handleConfirmDeleteSubCategory = () => {
+    if (deleteSubItemId) {
+      dispatch(deleteSubCategory(deleteSubItemId));
+    }
+    setShowSubDialog(false);
+    setDeleteSubItemId(null);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDialog(false);
+    setDeleteItemId(null);
+  };
+
+  const handleCancelDeleteSub = () => {
+    setShowSubDialog(false);
+    setDeleteSubItemId(null);
+  };
+
+  const handleCloseCategoryModal = () => {
+    setCategoryModal(false);
+    setEditCategory(null);
+  };
+
+  const handleCloseSubCategoryModal = () => {
+    setShowSubCategoryModal(false);
+    setEditSubCategory(null);
+  };
+
+  const handleAddSubCategory = () => {
+    setEditSubCategory(null);
+    setShowSubCategoryModal(true);
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -348,7 +454,7 @@ const CategoryListSection: React.FC = () => {
           <div key={category.id} className="group relative">
             <div
               draggable
-              onDragStart={(e) => handleDragStart(e, category, index)}
+              onDragStart={(e) => handleDragStart(e, category)}
               onDragEnd={handleDragEnd}
               onDragOver={(e) => handleDragOver(e, index)}
               onDragLeave={handleDragLeave}
@@ -386,8 +492,7 @@ const CategoryListSection: React.FC = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setEditCategory(category);
-                    setCategoryModal(true);
+                    handleEditCategory(category);
                   }}
                   className="text-blue-600 hover:text-blue-800 transition"
                   title="Edit Category"
@@ -399,8 +504,7 @@ const CategoryListSection: React.FC = () => {
                   className="text-red-600 hover:text-red-800 transition"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setDeleteItemId(category.id);
-                    setShowDialog(true);
+                    handleDeleteCategory(category.id);
                   }}
                 >
                   <Trash2 />
@@ -410,9 +514,7 @@ const CategoryListSection: React.FC = () => {
                   className="text-gray-500 cursor-pointer hover:text-gray-700"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setExpandedCategoryId(
-                      expandedCategoryId === category.id ? null : category.id
-                    );
+                    handleExpandCategory(category.id);
                   }}
                 />
               </div>
@@ -445,20 +547,14 @@ const CategoryListSection: React.FC = () => {
                             <button
                               className="text-blue-600 hover:text-blue-800"
                               title="Edit Subcategory"
-                              onClick={() => {
-                                setEditSubCategory(sub);
-                                setShowSubCategoryModal(true);
-                              }}
+                              onClick={() => handleEditSubCategory(sub)}
                             >
                               <Edit2 size={16} />
                             </button>
 
                             <button
                               className="text-red-600 hover:text-red-800 transition"
-                              onClick={() => {
-                                setDeleteSubItemId(sub.id);
-                                setShowSubDialog(true);
-                              }}
+                              onClick={() => handleDeleteSubCategory(sub.id)}
                             >
                               <Trash2 />
                             </button>
@@ -477,10 +573,7 @@ const CategoryListSection: React.FC = () => {
                 <div className="w-full flex justify-center my-6">
                   <div
                     className="flex items-center gap-3 cursor-pointer group"
-                    onClick={() => {
-                      setEditSubCategory(null);
-                      setShowSubCategoryModal(true);
-                    }}
+                    onClick={handleAddSubCategory}
                   >
                     <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 group-hover:bg-blue-200">
                       <span className="text-blue-600 text-lg font-bold">+</span>
@@ -492,20 +585,19 @@ const CategoryListSection: React.FC = () => {
                 </div>
 
                 {showSubCategoryModal && (
-                  <Modal
-                    onClose={() => {
-                      setShowSubCategoryModal(false);
-                      setEditSubCategory(null);
-                    }}
-                  >
+                  <Modal onClose={handleCloseSubCategoryModal}>
                     <SubCategoryForm
                       parentId={category.id}
-                      initialData={editSubCategory}
+                      initialData={
+                        editSubCategory
+                          ? {
+                              name: editSubCategory.name,
+                              image: editSubCategory.image,
+                            }
+                          : undefined
+                      }
                       subCategoryId={editSubCategory?.id}
-                      onClose={() => {
-                        setShowSubCategoryModal(false);
-                        setEditSubCategory(null);
-                      }}
+                      onClose={handleCloseSubCategoryModal}
                     />
                   </Modal>
                 )}
@@ -585,17 +677,8 @@ const CategoryListSection: React.FC = () => {
         message="Are you sure you want to delete this Category?"
         confirmLabel="Delete"
         cancelLabel="Cancel"
-        onConfirm={() => {
-          if (deleteItemId) {
-            dispatch(deleteCategory(deleteItemId));
-          }
-          setShowDialog(false);
-          setDeleteItemId(null);
-        }}
-        onCancel={() => {
-          setShowDialog(false);
-          setDeleteItemId(null);
-        }}
+        onConfirm={handleConfirmDeleteCategory}
+        onCancel={handleCancelDelete}
       />
 
       {/* Delete Subcategory Dialog */}
@@ -605,34 +688,21 @@ const CategoryListSection: React.FC = () => {
         message="Are you sure you want to delete this Subcategory?"
         confirmLabel="Delete"
         cancelLabel="Cancel"
-        onConfirm={() => {
-          if (deleteSubItemId) {
-            dispatch(deleteSubCategory(deleteSubItemId));
-          }
-          setShowSubDialog(false);
-          setDeleteSubItemId(null);
-        }}
-        onCancel={() => {
-          setShowSubDialog(false);
-          setDeleteSubItemId(null);
-        }}
+        onConfirm={handleConfirmDeleteSubCategory}
+        onCancel={handleCancelDeleteSub}
       />
 
       {/* Category Modal (for edit/create) */}
       {showCategoryModal && (
-        <Modal
-          onClose={() => {
-            setCategoryModal(false);
-            setEditCategory(null);
-          }}
-        >
+        <Modal onClose={handleCloseCategoryModal}>
           <CategoryForm
-            initialData={editCategory}
+            initialData={
+              editCategory
+                ? { name: editCategory.name, image: editCategory.image }
+                : undefined
+            }
             categoryId={editCategory?.id}
-            onClose={() => {
-              setCategoryModal(false);
-              setEditCategory(null);
-            }}
+            onClose={handleCloseCategoryModal}
           />
         </Modal>
       )}

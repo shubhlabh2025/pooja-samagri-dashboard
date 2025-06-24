@@ -2,5 +2,7 @@ export interface Category {
   id: number;
   name: string;
   image: string;
-  priority: string;
+  priority?: number | string;
 }
+
+export type CreateCategoryPayload = Omit<Category, "id">;

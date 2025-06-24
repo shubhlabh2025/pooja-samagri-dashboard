@@ -23,12 +23,14 @@ const SubCategoriesModal: React.FC<SubCategoriesModalProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { subCategories, pagination, status } = useAppSelector(
-    (state) => state.subCategories
+    (state) => state.subCategories,
   );
   const [searchText, setSearchText] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<string[]>(selectedSubCategoryIds);
+  const [selectedIds, setSelectedIds] = useState<string[]>(
+    selectedSubCategoryIds,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Fetch subcategories when modal opens or parentCategoryIds changes
@@ -40,7 +42,7 @@ const SubCategoriesModal: React.FC<SubCategoriesModalProps> = ({
           pageSize: PAGE_SIZE,
           q: query,
           parent_id: parentCategoryIds,
-        })
+        }),
       );
     }
   }, [dispatch, page, query, open, parentCategoryIds]);
@@ -105,7 +107,7 @@ const SubCategoriesModal: React.FC<SubCategoriesModalProps> = ({
                   setSelectedIds((prev) =>
                     e.target.checked
                       ? [...prev, sub.id]
-                      : prev.filter((id) => id !== sub.id)
+                      : prev.filter((id) => id !== sub.id),
                   );
                 }}
               />

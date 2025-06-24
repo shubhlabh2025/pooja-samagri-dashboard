@@ -5,7 +5,7 @@ import type { ApiResponse } from "@/interfaces/api-response";
 export const createCouponApi = (client: AxiosInstance) => ({
   // GET /api/coupons?page=&limit=&q=
   getAllCoupons: (
-    params: { page?: number; pageSize?: number; q?: string } = {}
+    params: { page?: number; pageSize?: number; q?: string } = {},
   ) => {
     const { page = 1, pageSize = 30, q } = params;
     const query = [
@@ -20,7 +20,8 @@ export const createCouponApi = (client: AxiosInstance) => ({
   },
 
   // GET /api/coupons/:id
-  getCouponById: (id: string) => client.get<ApiResponse<Coupon>>(`/api/coupons/${id}`),
+  getCouponById: (id: string) =>
+    client.get<ApiResponse<Coupon>>(`/api/coupons/${id}`),
 
   // POST /api/coupons
   createCoupon: (payload: CreateCoupon) =>

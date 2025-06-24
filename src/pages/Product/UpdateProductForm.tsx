@@ -65,10 +65,10 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const [query] = useState("");
 
   const productFromStore = useAppSelector((state) =>
-    state.products.products.find((p) => p.id === productId)
+    state.products.products.find((p) => p.id === productId),
   );
   const selectedProduct = useAppSelector(
-    (state) => state.products.selectedProduct
+    (state) => state.products.selectedProduct,
   );
 
   // Categories/subcategories from global state
@@ -79,13 +79,13 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const [productName, setProductName] = useState<string>("");
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>(
-    {}
+    {},
   );
   const [savingName, setSavingName] = useState(false);
 
   // Modals control
   const [categoryModalIndex, setCategoryModalIndex] = useState<number | null>(
-    null
+    null,
   );
   const [subCategoryModalIndex, setSubCategoryModalIndex] = useState<
     number | null
@@ -130,14 +130,16 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   useEffect(() => {
     const prod = productFromStore || selectedProduct;
     if (prod && prod.product_variants) {
-      const extendedVariants = prod.product_variants.map((v: ProductVariant) => {
-        const { categories, subcategories } = extractCategoriesFromVariant(v);
-        return {
-          ...v,
-          category_ids: categories,
-          subcategory_ids: subcategories,
-        };
-      });
+      const extendedVariants = prod.product_variants.map(
+        (v: ProductVariant) => {
+          const { categories, subcategories } = extractCategoriesFromVariant(v);
+          return {
+            ...v,
+            category_ids: categories,
+            subcategory_ids: subcategories,
+          };
+        },
+      );
       setVariants(extendedVariants);
       setProductName(prod.product_variants[0]?.name ?? "");
     }
@@ -176,7 +178,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const updateVariant = <K extends keyof ExtendedProductVariant>(
     index: number,
     field: K,
-    value: ExtendedProductVariant[K]
+    value: ExtendedProductVariant[K],
   ) => {
     let updated = [...variants];
     if (field === "default_variant" && value) {
@@ -211,7 +213,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
             updates: {
               name: productName,
             },
-          })
+          }),
         );
       }
       // Optionally: show toast
@@ -241,7 +243,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
         const result = await dispatch(createProductVariant(cleaned)).unwrap();
         // Now update the local state with new id
         setVariants((prev) =>
-          prev.map((v, i) => (i === index ? { ...v, ...result } : v))
+          prev.map((v, i) => (i === index ? { ...v, ...result } : v)),
         );
         toast.success("Variant created successfully");
 
@@ -260,7 +262,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           updateProductVariant({
             id: variant.id,
             updates: cleaned,
-          })
+          }),
         );
         toast.success("Variant updated successfully");
         console.log("toast triger");
@@ -461,7 +463,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                           updateVariant(
                             index,
                             "category_ids",
-                            variant.category_ids.filter((id) => id !== catId)
+                            variant.category_ids.filter((id) => id !== catId),
                           );
                           updateVariant(index, "subcategory_ids", []);
                         }}
@@ -508,7 +510,9 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                           updateVariant(
                             index,
                             "subcategory_ids",
-                            variant.subcategory_ids.filter((id) => id !== subId)
+                            variant.subcategory_ids.filter(
+                              (id) => id !== subId,
+                            ),
                           )
                         }
                         className="ml-1 rounded hover:bg-green-200 p-1"

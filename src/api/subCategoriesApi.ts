@@ -1,6 +1,8 @@
 import type { AxiosInstance } from "axios";
 import type { GetCategoriesResponse } from "@/interfaces/GetAllCategoriesResponse";
 import type { CategoryResponse } from "@/interfaces/CategoryResposne";
+import type { CreateSubCategories } from "@/interfaces/subcategories";
+import type { CreateCategoryPayload } from "@/interfaces/category";
 
 export const createSubCategoryApi = (client: AxiosInstance) => ({
   getSubCategoriesById: (ids: string[]) =>
@@ -12,9 +14,9 @@ export const createSubCategoryApi = (client: AxiosInstance) => ({
 
   deleteSubCategory: (id: string) => client.delete(`/api/sub-categories/${id}`),
 
-  createSubCategory: (payload: any) =>
+  createSubCategory: (payload: CreateSubCategories) =>
     client.post<CategoryResponse>("/api/sub-categories", payload), // type this later as per your schema
 
-  updateSubCategory: (id: string, updates: any) =>
+  updateSubCategory: (id: string, updates: CreateCategoryPayload) =>
     client.patch<CategoryResponse>(`/api/sub-categories/${id}`, updates),
 });

@@ -28,7 +28,7 @@ export interface Offer {
   max_discount_value: string;
   min_order_value: string;
   offer_type: "NEW_USER" | "ALL_USER";
-  offer_per_user: boolean;
+  offer_per_user?: boolean;
   offer_status: boolean;
   start_date: string;
   end_date: string;
@@ -74,7 +74,7 @@ const offerSchema = z
     {
       message: "End date must be greater than start date",
       path: ["end_date"],
-    }
+    },
   );
 
 const UpdateOfferPage = () => {
@@ -89,7 +89,7 @@ const UpdateOfferPage = () => {
 
   const [form, setForm] = useState<Offer>(defaultOffer);
   const [errors, setErrors] = useState<Partial<Record<keyof Offer, string>>>(
-    {}
+    {},
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFixed, setIsFixed] = useState(false);
@@ -123,11 +123,7 @@ const UpdateOfferPage = () => {
         max_discount_value: selectedCoupon.max_discount_value?.toString() || "",
         min_order_value: (selectedCoupon.min_order_value ?? 0).toString(),
         // Handle missing fields with defaults
-        offer_type: (selectedCoupon as any).offer_type || "NEW_USER",
-        offer_per_user:
-          (selectedCoupon as any).offer_per_user ||
-          (selectedCoupon as any).usage_limit_per_user !== null ||
-          false,
+        offer_type: selectedCoupon.offer_type || "NEW_USER",
         offer_status:
           selectedCoupon.is_active !== undefined
             ? selectedCoupon.is_active
@@ -219,7 +215,7 @@ const UpdateOfferPage = () => {
         updateCoupon({
           id: offerId,
           updates: mapFormToUpdateCoupon(form),
-        })
+        }),
       ).unwrap();
 
       toast.success("Offer updated successfully");
@@ -300,7 +296,7 @@ const UpdateOfferPage = () => {
           />
           <Toggle
             label="Limit one offer per user"
-            checked={form.offer_per_user}
+            checked={form.offer_per_user ?? false}
             onChange={(val) => updateField("offer_per_user", val)}
           />
           <Input
@@ -321,7 +317,7 @@ const UpdateOfferPage = () => {
               onChange={(e) => {
                 updateField(
                   "discount_type",
-                  e.target.value as Offer["discount_type"]
+                  e.target.value as Offer["discount_type"],
                 );
                 setIsFixed(e.target.value === "fixed");
               }}

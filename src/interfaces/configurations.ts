@@ -11,6 +11,6 @@ export interface ConfigurationModel {
   delivery_charge: number;
   delivery_time: number;
   delivery_radius: number;
-  ad_banners?:AdBanner[];
+  ad_banners?: AdBanner[];
   announcement_text: string;
 }

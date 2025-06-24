@@ -68,14 +68,14 @@ const ProductForm = () => {
   // Form state
   const [productName, setProductName] = useState<string>("");
   const [variants, setVariants] = useState<
-    (ProductVariant & { category_ids: string[], subcategory_ids: string[] })[]
+    (ProductVariant & { category_ids: string[]; subcategory_ids: string[] })[]
   >([{ ...defaultVariant(), name: "" }]);
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>(
-    {}
+    {},
   );
   // Modals control
   const [categoryModalIndex, setCategoryModalIndex] = useState<number | null>(
-    null
+    null,
   );
   const [subCategoryModalIndex, setSubCategoryModalIndex] = useState<
     number | null
@@ -102,14 +102,14 @@ const ProductForm = () => {
     K extends keyof (ProductVariant & {
       category_ids: string[];
       subcategory_ids: string[];
-    })
+    }),
   >(
     index: number,
     field: K,
     value: (ProductVariant & {
       category_ids: string[];
       subcategory_ids: string[];
-    })[K]
+    })[K],
   ) => {
     let updated = [...variants];
     if (field === "default_variant" && value) {
@@ -323,7 +323,9 @@ const ProductForm = () => {
                     updateVariant(
                       index,
                       "category_ids",
-                      variant.category_ids .filter((id) => id !== catId) as string[]
+                      variant.category_ids.filter(
+                        (id) => id !== catId,
+                      ) as string[],
                     )
                   }
                   className="ml-1 rounded hover:bg-blue-200 p-1"
@@ -368,7 +370,7 @@ const ProductForm = () => {
                     updateVariant(
                       index,
                       "subcategory_ids",
-                      variant.subcategory_ids.filter((id) => id !== subId)
+                      variant.subcategory_ids.filter((id) => id !== subId),
                     )
                   }
                   className="ml-1 rounded hover:bg-green-200 p-1"

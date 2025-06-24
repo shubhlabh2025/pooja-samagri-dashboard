@@ -30,7 +30,7 @@ const SubCategoryForm = ({
   onClose?: () => void;
 }) => {
   const [form, setForm] = useState<SubCategoryFormData>(
-    initialData || defaultSubCategory
+    initialData || defaultSubCategory,
   );
   const [errors, setErrors] = useState<
     Partial<Record<keyof SubCategoryFormData, string>>
@@ -77,18 +77,18 @@ const SubCategoryForm = ({
               name: form.name,
               image: form.image,
             },
-          })
+          }),
         );
       } else {
         actionResult = await dispatch(
-          createSubCategory({ ...form, parent_id: parentId })
+          createSubCategory({ ...form, parent_id: parentId }),
         );
       }
       if (!("error" in actionResult)) {
         onClose?.();
       }
     } catch (err) {
-      alert("Error saving subcategory.");
+      alert("Error saving subcategory " + err);
     } finally {
       setIsSubmitting(false);
     }
@@ -128,8 +128,8 @@ const SubCategoryForm = ({
                 ? "Updating..."
                 : "Creating..."
               : subCategoryId
-              ? "Update"
-              : "Create"}
+                ? "Update"
+                : "Create"}
           </button>
         </div>
       </form>

@@ -4,7 +4,6 @@ import CategoryForm from "./CategoryForm";
 import Modal from "@/components/Common/Modal";
 
 const CategoryPage: FC = () => {
-
   const [showCategoryModal, setCategoryModal] = useState(false);
 
   return (

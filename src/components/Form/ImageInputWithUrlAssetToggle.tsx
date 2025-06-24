@@ -58,7 +58,7 @@ const ImageUploadComponent: React.FC<Props> = ({
       const selectedFiles = Array.from(files);
       const uploadPromises = selectedFiles.map(async (file, index) => {
         setUploadProgress(
-          `Uploading ${index + 1} of ${selectedFiles.length}...`
+          `Uploading ${index + 1} of ${selectedFiles.length}...`,
         );
         return await uploadFile(file);
       });
@@ -79,7 +79,7 @@ const ImageUploadComponent: React.FC<Props> = ({
       setUploadProgress(
         `Upload failed: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
 
       // Clear error message after 5 seconds
@@ -129,8 +129,8 @@ const ImageUploadComponent: React.FC<Props> = ({
           dragActive
             ? "border-indigo-500 bg-indigo-50 text-indigo-700"
             : uploading
-            ? "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "border-gray-300 bg-gray-50 text-gray-500 hover:border-indigo-400"
+              ? "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "border-gray-300 bg-gray-50 text-gray-500 hover:border-indigo-400"
         }`}
       >
         <input
@@ -163,8 +163,8 @@ const ImageUploadComponent: React.FC<Props> = ({
             uploadProgress.includes("error")
               ? "text-red-500"
               : uploadProgress.includes("Successfully")
-              ? "text-green-500"
-              : "text-blue-500"
+                ? "text-green-500"
+                : "text-blue-500"
           }`}
         >
           {uploadProgress}

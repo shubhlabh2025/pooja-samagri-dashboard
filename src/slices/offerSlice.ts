@@ -12,7 +12,7 @@ export const fetchCoupons = createAsyncThunk(
   async (params?: { page?: number; pageSize?: number; q?: string }) => {
     const res = await couponApi.getAllCoupons(params);
     return res.data.data;
-  }
+  },
 );
 
 export const fetchCouponById = createAsyncThunk(
@@ -20,7 +20,7 @@ export const fetchCouponById = createAsyncThunk(
   async (id: string) => {
     const res = await couponApi.getCouponById(id);
     return res.data.data;
-  }
+  },
 );
 
 export const createCoupon = createAsyncThunk(
@@ -28,7 +28,7 @@ export const createCoupon = createAsyncThunk(
   async (data: CreateCoupon) => {
     const res = await couponApi.createCoupon(data);
     return res.data;
-  }
+  },
 );
 
 export const updateCoupon = createAsyncThunk(
@@ -36,7 +36,7 @@ export const updateCoupon = createAsyncThunk(
   async ({ id, updates }: { id: string; updates: UpdateCoupon }) => {
     const res = await couponApi.updateCoupon(id, updates);
     return res.data;
-  }
+  },
 );
 
 export const deleteCouponById = createAsyncThunk(
@@ -44,7 +44,7 @@ export const deleteCouponById = createAsyncThunk(
   async (id: string) => {
     await couponApi.deleteCouponById(id);
     return id;
-  }
+  },
 );
 
 export const deleteAllCoupons = createAsyncThunk(
@@ -52,7 +52,7 @@ export const deleteAllCoupons = createAsyncThunk(
   async () => {
     await couponApi.deleteAllCoupons();
     return;
-  }
+  },
 );
 
 // Slice
@@ -103,7 +103,7 @@ const couponSlice = createSlice({
 
       .addCase(updateCoupon.fulfilled, (state, action) => {
         const index = state.coupons.findIndex(
-          (c) => c.id === action.payload.id
+          (c) => c.id === action.payload.id,
         );
         if (index !== -1) state.coupons[index] = action.payload;
       })

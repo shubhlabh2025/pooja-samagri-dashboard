@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Trash2, Search, X } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../hooks/reduxHooks";
-import {
-  fetchCoupons,
-  deleteCouponById,
-} from "../../slices/offerSlice";
+import { fetchCoupons, deleteCouponById } from "../../slices/offerSlice";
 import { ProductSkeleton } from "../loadingSkeletons/productSkeleton";
 import { ErrorMessage } from "../Common/ErrorMessage";
 import DismissDialog from "../Common/DismissDialog";
@@ -36,7 +33,9 @@ const OffersListSection: React.FC = () => {
   }, [searchText]);
 
   useEffect(() => {
-    dispatch(fetchCoupons({ page: currentPage, pageSize: PAGE_SIZE, q: query }));
+    dispatch(
+      fetchCoupons({ page: currentPage, pageSize: PAGE_SIZE, q: query }),
+    );
   }, [dispatch, currentPage, query]);
 
   useEffect(() => {
@@ -45,7 +44,7 @@ const OffersListSection: React.FC = () => {
 
   const displayedCoupons = Array.isArray(coupons) ? coupons : [];
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -98,7 +97,11 @@ const OffersListSection: React.FC = () => {
       )}
 
       {loading && (
-        <div>{[...Array(6)].map((_, i) => <ProductSkeleton key={i} />)}</div>
+        <div>
+          {[...Array(6)].map((_, i) => (
+            <ProductSkeleton key={i} />
+          ))}
+        </div>
       )}
       {error && <ErrorMessage message={error} />}
 
@@ -107,8 +110,8 @@ const OffersListSection: React.FC = () => {
         {displayedCoupons.map((coupon) => (
           <div
             key={coupon.id}
-            onClick={()=>{
-                navigate(`/updateOffer/${coupon.id}`)
+            onClick={() => {
+              navigate(`/updateOffer/${coupon.id}`);
             }}
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3 group"
           >

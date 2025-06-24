@@ -23,7 +23,7 @@ const CategoryForm = ({
   onClose?: () => void;
 }) => {
   const [form, setForm] = useState<CategoryFormData>(
-    initialData || defaultCategory
+    initialData || defaultCategory,
   );
   const [errors, setErrors] = useState<
     Partial<Record<keyof CategoryFormData, string>>
@@ -62,7 +62,10 @@ const CategoryForm = ({
       let actionResult;
       if (categoryId) {
         actionResult = await dispatch(
-          updateCategory({ id: categoryId, updates: {name: form.name, image:form.image} })
+          updateCategory({
+            id: categoryId,
+            updates: { name: form.name, image: form.image },
+          }),
         );
       } else {
         actionResult = await dispatch(createCategory(form));
@@ -73,7 +76,7 @@ const CategoryForm = ({
         onClose?.();
       }
     } catch (err) {
-      alert("Error saving category.");
+      alert("Error saving category " + err);
     } finally {
       setIsSubmitting(false);
     }
@@ -113,8 +116,8 @@ const CategoryForm = ({
                 ? "Updating..."
                 : "Creating..."
               : categoryId
-              ? "Update"
-              : "Create"}
+                ? "Update"
+                : "Create"}
           </button>
         </div>
       </form>

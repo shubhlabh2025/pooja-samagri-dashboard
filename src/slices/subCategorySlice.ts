@@ -1,10 +1,14 @@
 // src/slices/subCategorySlice.ts
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { SubCategories } from "@/interfaces/subcategories"; // or whatever your SubCategory type is
+import type {
+  CreateSubCategories,
+  SubCategories,
+} from "@/interfaces/subcategories"; // or whatever your SubCategory type is
 import type { GetCategoriesResponse } from "@/interfaces/GetAllCategoriesResponse";
 import { createSubCategoryApi } from "../api/subCategoriesApi";
 import axiosClient from "@/api/apiClient";
+import type { CreateCategoryPayload } from "@/interfaces/category";
 
 // API Instance
 const subCategoryApi = createSubCategoryApi(axiosClient);
@@ -35,30 +39,30 @@ export const fetchSubCategories = createAsyncThunk(
       pageSize?: number;
       q?: string;
       parent_id?: string[];
-    } = {}
+    } = {},
   ) => {
     // Default to an empty array if not provided
     const parentIds = params.parent_id || [];
     const response = await subCategoryApi.getSubCategoriesById(parentIds);
     const { data, meta } = response.data;
     return { subCategories: data, pagination: meta };
-  }
+  },
 );
 
 export const createSubCategory = createAsyncThunk(
   "subCategories/create",
-  async (payload: any) => {
+  async (payload: CreateSubCategories) => {
     const response = await subCategoryApi.createSubCategory(payload);
     return response.data.data;
-  }
+  },
 );
 
 export const updateSubCategory = createAsyncThunk(
   "subCategories/update",
-  async ({ id, updates }: { id: string; updates: any }) => {
+  async ({ id, updates }: { id: string; updates: CreateCategoryPayload }) => {
     const response = await subCategoryApi.updateSubCategory(id, updates);
     return response.data.data;
-  }
+  },
 );
 
 export const deleteSubCategory = createAsyncThunk(
@@ -66,7 +70,7 @@ export const deleteSubCategory = createAsyncThunk(
   async (id: string) => {
     await subCategoryApi.deleteSubCategory(id);
     return id;
-  }
+  },
 );
 
 export const fetchSubCategoryById = createAsyncThunk(
@@ -76,7 +80,7 @@ export const fetchSubCategoryById = createAsyncThunk(
     // If this returns a list, use the first item for selected
     const first = response.data.data || null;
     return first;
-  }
+  },
 );
 
 // Slice
@@ -123,7 +127,7 @@ const subCategorySlice = createSlice({
 
       .addCase(deleteSubCategory.fulfilled, (state, action) => {
         state.subCategories = state.subCategories.filter(
-          (s) => s.id !== action.payload
+          (s) => s.id !== action.payload,
         );
       });
   },

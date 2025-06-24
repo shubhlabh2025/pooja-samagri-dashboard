@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
-import Logo from "../../assets/logo.jpg"
-import { useNavigate } from 'react-router-dom';
+import Logo from "../../assets/logo.jpg";
+import { useNavigate } from "react-router-dom";
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -10,12 +10,11 @@ const LoginForm: React.FC = () => {
 
   const navigate = useNavigate();
 
-
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle login logic
 
-    navigate('/orders',{ replace: true }); 
+    navigate("/orders", { replace: true });
   };
 
   return (
@@ -31,10 +30,9 @@ const LoginForm: React.FC = () => {
         <h2 className="text-center text-xl font-semibold text-purple-700 mb-4">
           Hi, Welcome Admin
         </h2>
-      
 
         <label className="block text-sm font-medium text-gray-700 mb-1">
-           Phone Number
+          Phone Number
         </label>
         <input
           type="number"
@@ -68,7 +66,6 @@ const LoginForm: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-end mb-6">
-       
           <a
             href="#"
             className="text-sm text-purple-600 font-medium hover:underline"
@@ -83,8 +80,6 @@ const LoginForm: React.FC = () => {
         >
           Log In
         </button>
-
-   
       </form>
     </div>
   );

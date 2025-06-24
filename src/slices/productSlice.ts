@@ -1,10 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { Product } from "@/interfaces/product";
+import type { Product, UpdateProductName } from "@/interfaces/product";
 import type { PaginationMeta } from "@/interfaces/Pagination";
 import { createProductApi } from "../api/productApi";
 import axiosClient from "@/api/apiClient";
-import type { CreateProductVariant, ProductVariant } from "@/interfaces/product-variant";
-
+import type {
+  CreateProductVariant,
+  ProductVariant,
+} from "@/interfaces/product-variant";
 
 interface ProductState {
   products: Product[];
@@ -32,7 +34,7 @@ export const fetchProducts = createAsyncThunk(
     const products = response.data.data; // Array<Product>
     const pagination = response.data.meta; // PaginationMeta
     return { products, pagination };
-  }
+  },
 );
 
 // 🔹 2. Fetch product by ID
@@ -41,19 +43,16 @@ export const fetchProductById = createAsyncThunk(
   async (id: string) => {
     const response = await productApi.getProductById(id);
     return response.data;
-  }
+  },
 );
 
 // 🔹 3. Create a new product
 export const createProduct = createAsyncThunk(
   "products/create",
   async (payload: { product_variants: CreateProductVariant[] }) => {
-
-     
-
     const response = await productApi.createProduct(payload);
     return response.data;
-  }
+  },
 );
 
 // 🔹 4. Update product by ID
@@ -62,15 +61,15 @@ export const updateProduct = createAsyncThunk(
   async ({ id, updates }: { id: string; updates: ProductVariant }) => {
     const response = await productApi.updateProduct(id, updates);
     return response.data;
-  }
+  },
 );
 
 export const updateProductName = createAsyncThunk(
   "products/updateName",
-  async ({ id, updates }: { id: string; updates: any }) => {
+  async ({ id, updates }: { id: string; updates: UpdateProductName }) => {
     const response = await productApi.updateProductName(id, updates);
     return response.data;
-  }
+  },
 );
 
 // 🔹 5. Delete product
@@ -79,7 +78,7 @@ export const deleteProduct = createAsyncThunk(
   async (id: string) => {
     await productApi.deleteProduct(id);
     return id;
-  }
+  },
 );
 
 const productSlice = createSlice({
@@ -146,7 +145,7 @@ const productSlice = createSlice({
               (v) => ({
                 ...v,
                 name: updated.product_variants[0]?.name ?? v.name,
-              })
+              }),
             ),
           };
         }

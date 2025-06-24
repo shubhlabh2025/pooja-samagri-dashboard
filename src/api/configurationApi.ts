@@ -9,5 +9,8 @@ export const createConfigurationApi = (client: AxiosInstance) => ({
   },
 
   updateConfiguration: (updates: Partial<ConfigurationModel>) =>
-    client.patch<ApiResponse<ConfigurationModel>>(`/api/configurations`, updates),
+    client.patch<ApiResponse<ConfigurationModel>>(
+      `/api/configurations`,
+      updates,
+    ),
 });

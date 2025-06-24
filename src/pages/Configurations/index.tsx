@@ -7,12 +7,7 @@ import {
 import { z } from "zod";
 import Input from "@/components/Form/Input";
 import Toggle from "@/components/Form/Toggle";
-import {
-  ArrowRight,
-  ChevronDown,
-  ChevronUp,
-  X,
-} from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const configurationSchema = z.object({
@@ -29,7 +24,7 @@ const configurationSchema = z.object({
         id: z.string(),
         image: z.string().url("Valid image URL required"),
         action: z.string(),
-      })
+      }),
     )
     .optional(),
 });
@@ -70,7 +65,7 @@ const ConfigurationSection = () => {
     action: string;
   }>({ image: "", action: "" });
   const [adBannerEditIndex, setAdBannerEditIndex] = useState<number | null>(
-    null
+    null,
   );
   const [adBannerError, setAdBannerError] = useState<string>("");
 
@@ -97,7 +92,7 @@ const ConfigurationSection = () => {
 
   const updateField = <K extends keyof ConfigurationFormData>(
     field: K,
-    value: ConfigurationFormData[K]
+    value: ConfigurationFormData[K],
   ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -107,7 +102,7 @@ const ConfigurationSection = () => {
   const resetAdBannerDraft = () => setAdBannerDraft({ image: "", action: "" });
 
   const handleAddBanner = () => {
-    if (!adBannerDraft.image || !adBannerDraft.action) {
+    if (!adBannerDraft.image) {
       setAdBannerError("Both image and action are required");
       return;
     }
@@ -168,7 +163,7 @@ const ConfigurationSection = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-     if (!validate()) return;
+    if (!validate()) return;
     console.log(form);
     await dispatch(updateConfiguration(form));
   };
@@ -224,7 +219,6 @@ const ConfigurationSection = () => {
             value={form.delivery_time.toString()}
             onChange={(val) => updateField("delivery_time", +val)}
           />
-      
         </div>
 
         {/* Actions List */}
@@ -305,7 +299,7 @@ const ConfigurationSection = () => {
                     setAdBannerDraft((d) => ({ ...d, image: val }))
                   }
                 />
-           
+
                 <div className="flex h-full flex-col self-end">
                   <button
                     type="button"

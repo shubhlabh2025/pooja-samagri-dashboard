@@ -14,7 +14,7 @@ const DEBOUNCE_MS = 200;
 const ProductListSection: React.FC = () => {
   const dispatch = useAppDispatch();
   const { products, status, error, pagination } = useAppSelector(
-    (state) => state.products
+    (state) => state.products,
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [showSearch, setShowSearch] = useState(false);
@@ -36,7 +36,7 @@ const ProductListSection: React.FC = () => {
   // Fetch products on page or query change
   useEffect(() => {
     dispatch(
-      fetchProducts({ page: currentPage, pageSize: PAGE_SIZE, q: query })
+      fetchProducts({ page: currentPage, pageSize: PAGE_SIZE, q: query }),
     );
     console.log("My product");
     console.log(products);

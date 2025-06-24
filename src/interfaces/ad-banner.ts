@@ -1,5 +1,5 @@
 export interface AdBanner {
-    id:string,
-    image:string,
-    action:string
+  id: string;
+  image: string;
+  action: string;
 }

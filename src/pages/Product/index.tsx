@@ -5,8 +5,6 @@ import { SkeletonTheme } from "react-loading-skeleton";
 import { Link } from "react-router";
 
 const Productpage: FC = () => {
-
-  
   return (
     <div className="space-y-6">
       {/* Page Header */}

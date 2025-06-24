@@ -1,11 +1,11 @@
 import type { AxiosInstance } from "axios";
 import type { GetCategoriesResponse } from "@/interfaces/GetAllCategoriesResponse";
 import type { CategoryResponse } from "@/interfaces/CategoryResposne";
-import type { ApiResponse } from "@/interfaces/api-response";
+import type { CreateCategoryPayload } from "@/interfaces/category";
 
 export const createCategoryApi = (client: AxiosInstance) => ({
   getAllCategories: (
-    params: { page?: number; pageSize?: number; q?: string } = {}
+    params: { page?: number; pageSize?: number; q?: string } = {},
   ) => {
     const { page = 1, pageSize = 30, q } = params;
     const query = [
@@ -13,7 +13,7 @@ export const createCategoryApi = (client: AxiosInstance) => ({
       `limit=${pageSize}`,
       q ? `q=${encodeURIComponent(q)}` : "",
       `sort_by=priority`,
-      `sort_order=DESC`
+      `sort_order=DESC`,
     ]
       .filter(Boolean)
       .join("&");
@@ -22,9 +22,9 @@ export const createCategoryApi = (client: AxiosInstance) => ({
 
   deleteCategory: (id: string) => client.delete(`/api/categories/${id}`),
 
-  createCategory: (payload: any) =>
+  createCategory: (payload: CreateCategoryPayload) =>
     client.post<CategoryResponse>("/api/categories", payload), // type this later as per your schema
 
-  updateCategory: (id: string, updates: any) =>
+  updateCategory: (id: string, updates: CreateCategoryPayload) =>
     client.patch<CategoryResponse>(`/api/categories/${id}`, updates),
 });

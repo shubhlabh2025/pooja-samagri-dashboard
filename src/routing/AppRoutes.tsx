@@ -118,8 +118,8 @@ const AppRoutes = () => (
         </DashboardLayout>
       }
     />
-    
-        <Route
+
+    <Route
       path="/updateOffer/:offerId"
       element={
         <DashboardLayout>
@@ -127,8 +127,6 @@ const AppRoutes = () => (
         </DashboardLayout>
       }
     />
-    
   </Routes>
-  
 );
 export default AppRoutes;

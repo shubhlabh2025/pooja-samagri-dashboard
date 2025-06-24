@@ -1,6 +1,6 @@
 import type { AxiosInstance } from "axios";
 import type { GetAllProductsResponse } from "@/interfaces/GetAllProductsResponse";
-import type { Product } from "@/interfaces/product";
+import type { Product, UpdateProductName } from "@/interfaces/product";
 import type {
   CreateProductVariant,
   ProductVariant,
@@ -8,7 +8,7 @@ import type {
 
 export const createProductApi = (client: AxiosInstance) => ({
   getAllProducts: (
-    params: { page?: number; pageSize?: number; q?: string } = {}
+    params: { page?: number; pageSize?: number; q?: string } = {},
   ) => {
     const { page = 1, pageSize = 30, q } = params;
     const query = [
@@ -30,6 +30,6 @@ export const createProductApi = (client: AxiosInstance) => ({
   updateProduct: (id: string, updates: ProductVariant) =>
     client.put<Product>(`/api/products/${id}`, updates),
 
-  updateProductName: (id: string, updates: any) =>
+  updateProductName: (id: string, updates: UpdateProductName) =>
     client.patch<Product>(`/api/products/${id}`, updates),
 });
