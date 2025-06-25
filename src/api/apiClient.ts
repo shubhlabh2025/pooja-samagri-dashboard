@@ -1,12 +1,22 @@
+// api/apiClient.ts
 import axios from "axios";
 import { env } from "@/env/env";
 
+// Create axios instance
 const axiosClient = axios.create({
   baseURL: env.API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
-    Authorization: `Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiZjVkOTUwMi04MDBjLTRlY2QtODNhMC0wMjZlMjZmODBiNWEiLCJwaG9uZV9udW1iZXIiOiIrOTE5OTE0NDU0MTQ3Iiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NTA1MzYyNzgsImV4cCI6MTc1MTgzMjI3OH0.KWyTKovD1UjWP4ryO-Nt0C1FBH_I7zITb5_kT9LnBzxnCoQtjajnghYIKUO2rR0I9bYfLxNFebs6-yRAAgtdINNtZZWTv2G_vEAdQ67ba9VA6sPSpE2vAPiD7N1j0RGx0AGf3RkB_9AQ1pJHfFQr5oLZMnYxMCxfw7j59DU0akrD693T_011ZmScDgbH1_nTqLZNKM44DdbAtkXjH_jT6jKeHjn1qAMtK5UcpsKMDXdsC47x1plezT40eweey51YNgp2AIWBrYgyy4gH8MZyjp-Z9eI3xOwaVxmWBQumAoJTH3tb4k-5p51tx4Fnsh2hKAg0tmTy6RXX3de0BCjOGw`,
   },
+});
+
+// ✅ Attach token from localStorage to each request
+axiosClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export default axiosClient;

@@ -9,6 +9,9 @@ import Input from "@/components/Form/Input";
 import Toggle from "@/components/Form/Toggle";
 import { ArrowRight, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
+import ImageInputWithURLAssetToggle from "@/components/Form/ImageInputWithUrlAssetToggle";
+import type { AdBanner } from "@/interfaces/ad-banner";
 
 const configurationSchema = z.object({
   phone_number: z.string().min(10, "Phone number is required"),
@@ -24,6 +27,7 @@ const configurationSchema = z.object({
         id: z.string(),
         image: z.string().url("Valid image URL required"),
         action: z.string(),
+        type: z.string(),
       }),
     )
     .optional(),
@@ -42,9 +46,8 @@ const defaultConfig: ConfigurationFormData = {
   ad_banners: [],
 };
 
-function generateId() {
-  // Simple unique ID for demo (use uuid in prod)
-  return Math.random().toString(36).slice(2, 10);
+function generateId(): string {
+  return uuidv4(); // Example: 'b8a23d0e-2f2a-4b79-a46d-4a3fdbdfd999'
 }
 
 const ConfigurationSection = () => {
@@ -62,11 +65,10 @@ const ConfigurationSection = () => {
   // For ad banner add/edit UI
   const [adBannerDraft, setAdBannerDraft] = useState<{
     image: string;
+    type: string;
     action: string;
-  }>({ image: "", action: "" });
-  const [adBannerEditIndex, setAdBannerEditIndex] = useState<number | null>(
-    null,
-  );
+  }>({ image: "", type: "", action: "" });
+  const [adBannerEditIndex] = useState<number | null>(null);
   const [adBannerError, setAdBannerError] = useState<string>("");
 
   // Fetch config on mount
@@ -90,6 +92,29 @@ const ConfigurationSection = () => {
     }
   }, [configState.data]);
 
+  const handleAddBanner = () => {
+    if (!adBannerDraft.image || !adBannerDraft.type) {
+      setAdBannerError("Please fill all banner fields");
+      return;
+    }
+
+    const newBanner: AdBanner = {
+      id: generateId(),
+      image: adBannerDraft.image,
+      type: adBannerDraft.type,
+      action: adBannerDraft.action,
+    };
+
+    setForm((f) => ({
+      ...f,
+      ad_banners: [...(f.ad_banners || []), newBanner],
+    }));
+
+    // Reset form for next banner
+    setAdBannerDraft({ image: "", type: "", action: "" });
+    setAdBannerError("");
+  };
+
   const updateField = <K extends keyof ConfigurationFormData>(
     field: K,
     value: ConfigurationFormData[K],
@@ -99,42 +124,33 @@ const ConfigurationSection = () => {
   };
 
   // Ad Banner helpers
-  const resetAdBannerDraft = () => setAdBannerDraft({ image: "", action: "" });
+  // const resetAdBannerDraft = () =>
+  //   setAdBannerDraft({ image: "", type: "", action: "" });
 
-  const handleAddBanner = () => {
-    if (!adBannerDraft.image) {
-      setAdBannerError("Both image and action are required");
-      return;
-    }
-    if (adBannerEditIndex !== null) {
-      // Edit mode
-      const banners = [...(form.ad_banners || [])];
-      banners[adBannerEditIndex] = {
-        ...banners[adBannerEditIndex],
-        ...adBannerDraft,
-      };
-      updateField("ad_banners", banners);
-      setAdBannerEditIndex(null);
-    } else {
-      // Add mode
-      updateField("ad_banners", [
-        ...(form.ad_banners || []),
-        { id: generateId(), ...adBannerDraft },
-      ]);
-    }
-    resetAdBannerDraft();
-    setAdBannerError("");
-  };
-
-  const handleEditBanner = (index: number) => {
-    const banner = form.ad_banners?.[index];
-    if (banner) {
-      setAdBannerDraft({ image: banner.image, action: banner.action });
-      setAdBannerEditIndex(index);
-      setAdBannerError("");
-      setAdBannerOpen(true);
-    }
-  };
+  // const handleAddBanner = () => {
+  //   if (!adBannerDraft.image) {
+  //     setAdBannerError("Both image are required");
+  //     return;
+  //   }
+  //   if (adBannerEditIndex !== null) {
+  //     // Edit mode
+  //     const banners = [...(form.ad_banners || [])];
+  //     banners[adBannerEditIndex] = {
+  //       ...banners[adBannerEditIndex],
+  //       ...adBannerDraft,
+  //     };
+  //     updateField("ad_banners", banners);
+  //     setAdBannerEditIndex(null);
+  //   } else {
+  //     // Add mode
+  //     updateField("ad_banners", [
+  //       ...(form.ad_banners || []),
+  //       { id: generateId(), ...adBannerDraft },
+  //     ]);
+  //   }
+  //   resetAdBannerDraft();
+  //   setAdBannerError("");
+  // };
 
   const handleDeleteBanner = (index: number) => {
     const banners = (form.ad_banners || []).filter((_, i) => i !== index);
@@ -164,7 +180,6 @@ const ConfigurationSection = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    console.log(form);
     await dispatch(updateConfiguration(form));
   };
 
@@ -273,13 +288,7 @@ const ConfigurationSection = () => {
                       className="w-16 h-10 object-cover rounded"
                     />
                     <span className="flex-1">{banner.action}</span>
-                    <button
-                      type="button"
-                      className="text-blue-600 hover:underline"
-                      onClick={() => handleEditBanner(idx)}
-                    >
-                      Edit
-                    </button>
+                    <span className="text-xs text-gray-500">{banner.type}</span>
                     <button
                       type="button"
                       className="text-red-500"
@@ -290,16 +299,32 @@ const ConfigurationSection = () => {
                   </div>
                 ))}
               </div>
+
               {/* Banner Add/Edit Form */}
               <div className="flex flex-col md:flex-row gap-2 items-center">
-                <Input
-                  label="Image URL"
-                  value={adBannerDraft.image}
+                {/* ⬇ Image Upload */}
+                <ImageInputWithURLAssetToggle
+                  label="Banner Image"
+                  value={[adBannerDraft.image]}
                   onChange={(val) =>
-                    setAdBannerDraft((d) => ({ ...d, image: val }))
+                    setAdBannerDraft((d) => ({ ...d, image: val[0] || "" }))
                   }
                 />
 
+                {/* ⬇ Dropdown for type */}
+                <select
+                  value={adBannerDraft.type}
+                  onChange={(e) =>
+                    setAdBannerDraft((d) => ({ ...d, type: e.target.value }))
+                  }
+                  className="px-3 py-2 border rounded text-sm"
+                >
+                  <option value="">Select Screen</option>
+                  <option value="HOME">HOME</option>
+                  <option value="CATEGORY">CATEGORY</option>
+                </select>
+
+                {/* ⬇ Submit */}
                 <div className="flex h-full flex-col self-end">
                   <button
                     type="button"
@@ -310,6 +335,7 @@ const ConfigurationSection = () => {
                   </button>
                 </div>
               </div>
+
               {adBannerError && (
                 <div className="text-red-500 text-xs mt-2">{adBannerError}</div>
               )}

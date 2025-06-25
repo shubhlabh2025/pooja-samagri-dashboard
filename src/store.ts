@@ -4,6 +4,7 @@ import categoriesReducer from "./slices/categorySlice";
 import subCategoriesReducer from "./slices/subCategorySlice";
 import configurationReducer from "./slices/configurationSlice";
 import offersReducer from "./slices/offerSlice";
+import authReducer from "./slices/authSlice";
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     subCategories: subCategoriesReducer,
     configurations: configurationReducer,
     offers: offersReducer,
+    auth: authReducer,
   },
 });
 

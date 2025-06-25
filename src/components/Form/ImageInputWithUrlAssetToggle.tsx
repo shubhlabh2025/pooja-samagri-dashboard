@@ -172,11 +172,11 @@ const ImageUploadComponent: React.FC<Props> = ({
       )}
 
       {/* Image Preview */}
-      {value.length > 0 && (
+      {value.filter(Boolean).length > 0 && (
         <div className="mt-3">
           <p className="text-xs text-gray-600 mb-2">Selected Images:</p>
           <div className="flex flex-wrap gap-2">
-            {value.map((imageUrl, index) => (
+            {value.filter(Boolean).map((imageUrl, index) => (
               <div key={index} className="relative group">
                 <img
                   src={imageUrl}
