@@ -30,7 +30,7 @@ const ImageUploadComponent: React.FC<Props> = ({
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await fetch("http://localhost:8000/api/assets/upload", {
+    const response = await fetch("https://api.shubhlabhpoojasamagri.com/api/assets/upload", {
       method: "POST",
       body: formData,
     });
