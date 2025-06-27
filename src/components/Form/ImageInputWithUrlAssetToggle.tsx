@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { env } from "@/env/env";
 
 interface Props {
   label: string;
@@ -29,8 +30,8 @@ const ImageUploadComponent: React.FC<Props> = ({
   const uploadFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-
-    const response = await fetch("https://api.shubhlabhpoojasamagri.com/api/assets/upload", {
+    const baseUrl = env.API_BASE_URL;
+    const response = await fetch(`${baseUrl}api/assets/upload`, {
       method: "POST",
       body: formData,
     });

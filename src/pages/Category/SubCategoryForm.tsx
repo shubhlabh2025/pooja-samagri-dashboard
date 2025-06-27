@@ -30,7 +30,7 @@ const SubCategoryForm = ({
   onClose?: () => void;
 }) => {
   const [form, setForm] = useState<SubCategoryFormData>(
-    initialData || defaultSubCategory,
+    initialData || defaultSubCategory
   );
   const [errors, setErrors] = useState<
     Partial<Record<keyof SubCategoryFormData, string>>
@@ -77,11 +77,11 @@ const SubCategoryForm = ({
               name: form.name,
               image: form.image,
             },
-          }),
+          })
         );
       } else {
         actionResult = await dispatch(
-          createSubCategory({ ...form, parent_id: parentId }),
+          createSubCategory({ ...form, parent_id: parentId })
         );
       }
       if (!("error" in actionResult)) {
@@ -114,7 +114,7 @@ const SubCategoryForm = ({
             label="Image"
             value={[form.image]}
             error={errors.image}
-            onChange={(val) => updateField("image", val[0] || "")}
+            onChange={(val) => updateField("image", val.at(-1) || "")}
           />
         </div>
         <div className="text-right mt-4">
@@ -128,8 +128,8 @@ const SubCategoryForm = ({
                 ? "Updating..."
                 : "Creating..."
               : subCategoryId
-                ? "Update"
-                : "Create"}
+              ? "Update"
+              : "Create"}
           </button>
         </div>
       </form>

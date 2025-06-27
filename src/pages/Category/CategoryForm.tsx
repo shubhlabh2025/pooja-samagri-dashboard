@@ -23,7 +23,7 @@ const CategoryForm = ({
   onClose?: () => void;
 }) => {
   const [form, setForm] = useState<CategoryFormData>(
-    initialData || defaultCategory,
+    initialData || defaultCategory
   );
   const [errors, setErrors] = useState<
     Partial<Record<keyof CategoryFormData, string>>
@@ -65,7 +65,7 @@ const CategoryForm = ({
           updateCategory({
             id: categoryId,
             updates: { name: form.name, image: form.image },
-          }),
+          })
         );
       } else {
         actionResult = await dispatch(createCategory(form));
@@ -102,7 +102,7 @@ const CategoryForm = ({
             label="Image"
             value={[form.image]}
             error={errors.image}
-            onChange={(val) => updateField("image", val[0] || "")}
+            onChange={(val) => updateField("image", val.at(-1) || "")}
           />
         </div>
         <div className="text-right mt-4">
@@ -116,8 +116,8 @@ const CategoryForm = ({
                 ? "Updating..."
                 : "Creating..."
               : categoryId
-                ? "Update"
-                : "Create"}
+              ? "Update"
+              : "Create"}
           </button>
         </div>
       </form>
