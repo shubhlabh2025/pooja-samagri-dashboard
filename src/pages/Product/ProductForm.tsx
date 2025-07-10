@@ -23,7 +23,7 @@ const productVariantSchema = z
     description: z.string().min(1, "Required"),
     mrp: z.number().min(0, "MRP must be positive"),
     price: z.number().min(0, "Price must be positive"),
-    image: z.array(z.string()).min(1, "At least one image required"),
+    images: z.array(z.string()).min(1, "At least one image required"),
     brand_name: z.string().min(1, "Required"),
     out_of_stock: z.boolean(),
     default_variant: z.boolean(),
@@ -51,7 +51,7 @@ const defaultVariant = (): ProductVariant & {
   mrp: 0,
   default_variant: true,
   price: 0,
-  image: [],
+  images: [],
   brand_name: "",
   out_of_stock: false,
   min_quantity: 1,
@@ -71,11 +71,11 @@ const ProductForm = () => {
     (ProductVariant & { category_ids: string[]; subcategory_ids: string[] })[]
   >([{ ...defaultVariant(), name: "" }]);
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>(
-    {},
+    {}
   );
   // Modals control
   const [categoryModalIndex, setCategoryModalIndex] = useState<number | null>(
-    null,
+    null
   );
   const [subCategoryModalIndex, setSubCategoryModalIndex] = useState<
     number | null
@@ -102,14 +102,14 @@ const ProductForm = () => {
     K extends keyof (ProductVariant & {
       category_ids: string[];
       subcategory_ids: string[];
-    }),
+    })
   >(
     index: number,
     field: K,
     value: (ProductVariant & {
       category_ids: string[];
       subcategory_ids: string[];
-    })[K],
+    })[K]
   ) => {
     let updated = [...variants];
     if (field === "default_variant" && value) {
@@ -215,7 +215,7 @@ const ProductForm = () => {
             src={BackArrow}
             alt="Back"
             className="w-6 h-6 mr-2 cursor-pointer"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("../products", { replace: true })}
           />
           <h2 className="text-2xl font-semibold text-gray-800">Add Product</h2>
         </div>
@@ -301,9 +301,9 @@ const ProductForm = () => {
             />
             <ImageInputWithURLAssetToggle
               label="Images"
-              value={variant.image}
+              value={variant.images}
               error={errors[index]?.image}
-              onChange={(val) => updateVariant(index, "image", val)}
+              onChange={(val) => updateVariant(index, "images", val)}
             />
           </div>
 
@@ -324,8 +324,8 @@ const ProductForm = () => {
                       index,
                       "category_ids",
                       variant.category_ids.filter(
-                        (id) => id !== catId,
-                      ) as string[],
+                        (id) => id !== catId
+                      ) as string[]
                     )
                   }
                   className="ml-1 rounded hover:bg-blue-200 p-1"
@@ -370,7 +370,7 @@ const ProductForm = () => {
                     updateVariant(
                       index,
                       "subcategory_ids",
-                      variant.subcategory_ids.filter((id) => id !== subId),
+                      variant.subcategory_ids.filter((id) => id !== subId)
                     )
                   }
                   className="ml-1 rounded hover:bg-green-200 p-1"

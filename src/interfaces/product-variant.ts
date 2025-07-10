@@ -9,7 +9,7 @@ export interface ProductVariant {
   mrp: number;
   price: number;
   categories?: SubCategories[];
-  image: string[];
+  images: string[];
   brand_name: string;
   out_of_stock: boolean;
   default_variant: boolean;
@@ -30,7 +30,7 @@ export const defaultVariant = (): ProductVariant => ({
   mrp: 0,
   price: 0,
   categories: [],
-  image: [],
+  images: [],
   brand_name: "",
   out_of_stock: false,
   default_variant: false,
@@ -48,7 +48,7 @@ export interface CreateProductVariant {
   mrp: number;
   price: number;
   categories?: SubCategories[];
-  image: string[];
+  images: string[];
   brand_name: string;
   out_of_stock: boolean;
   default_variant: boolean;

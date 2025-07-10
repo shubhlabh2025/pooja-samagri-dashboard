@@ -149,7 +149,7 @@ const ProductListSection: React.FC = () => {
               >
                 <div className="flex items-center gap-4">
                   <img
-                    src={variant.image[0] || userAvatar}
+                    src={variant.images[0] || userAvatar}
                     alt={variant.name}
                     className="w-10 h-10 rounded-full"
                   />

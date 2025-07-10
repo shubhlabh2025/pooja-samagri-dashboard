@@ -28,7 +28,7 @@ const AppRoutes = () => (
       }
     />
     <Route
-      path="/OrderDetailSection"
+      path="/order/:id"
       element={
         <DashboardLayout>
           <OrderDetailSection />

@@ -441,9 +441,9 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
 
                   <ImageInputWithURLAssetToggle
                     label="Images"
-                    value={variant.image}
+                    value={variant.images}
                     error={errors[index]?.image}
-                    onChange={(val) => updateVariant(index, "image", val)}
+                    onChange={(val) => updateVariant(index, "images", val)}
                   />
                 </div>
 
