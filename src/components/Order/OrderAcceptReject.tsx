@@ -1,7 +1,7 @@
 import type { Order, User } from "@/interfaces/orders";
 import type { PaginationMeta } from "@/interfaces/Pagination";
 import { useEffect, useRef, useState, type FC } from "react";
-import {  useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import userAvatar from "../../assets/user.png";
 import { formatDate } from "@/utils/Utils";
 import DismissDialog from "../Common/DismissDialog";
@@ -44,7 +44,7 @@ const OrderAcceptReject: FC<Props> = ({
   const [showDialog, setShowDialog] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<"accepted" | "rejected">(
-    "accepted"
+    "accepted",
   );
 
   const dispatch = useAppDispatch();
@@ -64,15 +64,15 @@ const OrderAcceptReject: FC<Props> = ({
 
   const totalPages = pagination?.totalPages || 1;
   const pageButtons = [...Array(Math.min(5, totalPages)).keys()].map(
-    (i) => i + 1
+    (i) => i + 1,
   );
 
   const handleStatusChange = () => {
     if (selectedOrderId) {
       dispatch(
-        updateOrderStatus({ id: selectedOrderId, status: selectedAction })
+        updateOrderStatus({ id: selectedOrderId, status: selectedAction }),
       );
-      navigate(`/order/${selectedOrderId}`);
+      navigate(0);
       setShowDialog(false);
     }
   };
@@ -80,7 +80,9 @@ const OrderAcceptReject: FC<Props> = ({
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="border-b px-6 py-4 flex items-center justify-between">
-        <h3 className="font-semibold text-gray-800">Pending Orders ({pagination?.totalItems})</h3>
+        <h3 className="font-semibold text-gray-800">
+          Pending Orders ({pagination?.totalItems})
+        </h3>
         <input
           ref={inputRef}
           value={searchText}

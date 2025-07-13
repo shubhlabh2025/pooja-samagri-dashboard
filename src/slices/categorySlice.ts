@@ -4,6 +4,7 @@ import axiosClient from "@/api/apiClient";
 import type { SubCategories } from "@/interfaces/subcategories";
 import type { PaginationMeta } from "@/interfaces/Pagination";
 import type { CreateCategoryPayload } from "@/interfaces/category";
+import { toast } from "react-toastify";
 
 // 1. API client instance
 const categoryApi = createCategoryApi(axiosClient);
@@ -87,19 +88,33 @@ const categorySlice = createSlice({
       .addCase(fetchCategories.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message || "Failed to fetch categories";
+        toast.error(state.error);
       })
       .addCase(createCategory.fulfilled, (state, action) => {
         state.categories.unshift(action.payload); // Add new category to top
+        toast.success("Category created");
+      })
+      .addCase(createCategory.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message || "Failed to Update category";
+        toast.error(state.error);
       })
       .addCase(updateCategory.fulfilled, (state, action) => {
         const updated = action.payload.data;
         const index = state.categories.findIndex((c) => c.id === updated.id);
         if (index !== -1) state.categories[index] = updated;
+        toast.success("Category Updated");
+      })
+      .addCase(updateCategory.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message || "Failed to Update category";
+        toast.error(state.error);
       })
       .addCase(deleteCategory.fulfilled, (state, action) => {
         state.categories = state.categories.filter(
           (c) => c.id !== action.payload,
         );
+        toast.success("Category deleted");
       });
   },
 });

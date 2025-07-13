@@ -7,6 +7,7 @@ import type {
   CreateProductVariant,
   ProductVariant,
 } from "@/interfaces/product-variant";
+import { toast } from "react-toastify";
 
 interface ProductState {
   products: Product[];
@@ -103,6 +104,7 @@ const productSlice = createSlice({
       .addCase(fetchProducts.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message || "Failed to fetch products";
+        toast.error(state.error);
       })
 
       // fetchById
@@ -113,6 +115,12 @@ const productSlice = createSlice({
       // create
       .addCase(createProduct.fulfilled, (state, action) => {
         state.products.push(action.payload);
+        toast.success("Product Created Successfully");
+      })
+      .addCase(createProduct.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message || "Failed to Create products";
+        toast.error(state.error);
       })
 
       // update
@@ -123,7 +131,14 @@ const productSlice = createSlice({
         if (state.selectedProduct?.id === updated.id) {
           state.selectedProduct = updated;
         }
+        toast.success("Product Updated Successfully");
       })
+      .addCase(updateProduct.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message || "Failed to Update products";
+        toast.error(state.error);
+      })
+
       .addCase(updateProductName.fulfilled, (state, action) => {
         const updated = action.payload;
         // Update product in the list
@@ -149,11 +164,13 @@ const productSlice = createSlice({
             ),
           };
         }
+        toast.success("Product Updated Successfully");
       })
 
       // delete
       .addCase(deleteProduct.fulfilled, (state, action) => {
         state.products = state.products.filter((p) => p.id !== action.payload);
+        toast.success("Product Deleted Successfully");
       });
   },
 });

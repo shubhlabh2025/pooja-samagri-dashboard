@@ -179,8 +179,11 @@ const ConfigurationSection = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Starting configuration");
+
     if (!validate()) return;
     await dispatch(updateConfiguration(form));
+    console.log("updated configuration");
   };
 
   if (configState.status === "loading" && !configState.data) {
@@ -320,8 +323,8 @@ const ConfigurationSection = () => {
                   className="px-3 py-2 border rounded text-sm"
                 >
                   <option value="">Select Screen</option>
-                  <option value="HOME">HOME</option>
-                  <option value="CATEGORY">CATEGORY</option>
+                  <option value="home">HOME</option>
+                  <option value="category">CATEGORY</option>
                 </select>
 
                 {/* ⬇ Submit */}

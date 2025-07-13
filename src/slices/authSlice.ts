@@ -3,6 +3,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { createAuthApi } from "../api/authApi";
 import axiosClient from "@/api/apiClient";
 import type { AxiosError } from "axios";
+import { toast } from "react-toastify";
 
 const authApi = createAuthApi(axiosClient);
 
@@ -30,6 +31,8 @@ export const sendOtp = createAsyncThunk(
       return phoneNumber;
     } catch (err) {
       const error = err as AxiosError<{ message: string }>;
+      toast.error(error.response?.data?.message);
+
       return rejectWithValue(
         error.response?.data?.message || "Failed to send OTP",
       );
@@ -60,6 +63,7 @@ export const verifyOtp = createAsyncThunk(
       };
     } catch (err) {
       const error = err as AxiosError<{ message: string }>;
+      toast.error(error.response?.data?.message);
 
       return rejectWithValue(
         error.response?.data?.message || "Failed to verify OTP",
@@ -90,10 +94,12 @@ const authSlice = createSlice({
       .addCase(sendOtp.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.phoneNumber = action.payload;
+        toast.success("Otp send on Your mobile");
       })
       .addCase(sendOtp.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload as string;
+        toast.error("Otp failed to Send");
       })
       .addCase(verifyOtp.pending, (state) => {
         state.status = "loading";
@@ -104,10 +110,12 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.phoneNumber = action.payload.phoneNumber;
         state.token = action.payload.token;
+        toast.success("Otp Verified succesfully");
       })
       .addCase(verifyOtp.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload as string;
+        toast.error("Failed to verify Otp");
       });
   },
 });

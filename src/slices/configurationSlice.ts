@@ -3,6 +3,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { ConfigurationModel } from "@/interfaces/configurations";
 import axiosClient from "@/api/apiClient";
 import { createConfigurationApi } from "@/api/configurationApi";
+import { toast } from "react-toastify";
 
 const configurationApi = createConfigurationApi(axiosClient);
 
@@ -51,6 +52,7 @@ const configurationSlice = createSlice({
       .addCase(fetchConfiguration.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message || "Failed to fetch configuration";
+        toast.error(state.error);
       })
       .addCase(updateConfiguration.pending, (state) => {
         state.status = "loading";
@@ -59,10 +61,12 @@ const configurationSlice = createSlice({
       .addCase(updateConfiguration.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.data = action.payload;
+        toast.success("Configuration updated");
       })
       .addCase(updateConfiguration.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message || "Failed to update configuration";
+        toast.error(state.error);
       });
   },
 });

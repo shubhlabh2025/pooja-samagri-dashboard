@@ -87,7 +87,7 @@ const AppRoutes = () => (
     />
 
     <Route
-      path="/customerDetails"
+      path="/customerDetails/:userId"
       element={
         <DashboardLayout>
           <CustomerDetailSection />

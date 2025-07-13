@@ -14,7 +14,7 @@ import {
   selectCouponLoading,
   selectCouponError,
 } from "@/slices/offerSlice";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import type { UpdateCoupon } from "@/interfaces/coupon";
 import { DateTimePicker } from "@/components/Common/DateTimePicker";
 
@@ -273,19 +273,6 @@ const UpdateOfferPage = () => {
           Update the offer details and conditions.
         </p>
       </div>
-
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
 
       <div className="bg-white border border-gray-100 rounded-md p-6 space-y-6 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

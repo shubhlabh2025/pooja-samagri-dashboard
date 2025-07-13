@@ -6,6 +6,7 @@ import configurationReducer from "./slices/configurationSlice";
 import offersReducer from "./slices/offerSlice";
 import authReducer from "./slices/authSlice";
 import orderReducer from "./slices/orderSlice";
+import userReducer from "./slices/userSlice";
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     offers: offersReducer,
     auth: authReducer,
     order: orderReducer,
+    user: userReducer,
   },
 });
 

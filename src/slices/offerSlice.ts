@@ -3,6 +3,7 @@ import type { RootState } from "@/store";
 import type { Coupon, CreateCoupon, UpdateCoupon } from "@/interfaces/coupon";
 import { createCouponApi } from "@/api/offersApis";
 import axiosClient from "@/api/apiClient";
+import { toast } from "react-toastify";
 
 const couponApi = createCouponApi(axiosClient);
 
@@ -91,6 +92,7 @@ const couponSlice = createSlice({
       .addCase(fetchCoupons.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to fetch coupons";
+        toast.error(state.error);
       })
 
       .addCase(fetchCouponById.fulfilled, (state, action) => {
@@ -99,6 +101,7 @@ const couponSlice = createSlice({
 
       .addCase(createCoupon.fulfilled, (state, action) => {
         state.coupons.push(action.payload);
+        toast.success("Coupoun Created");
       })
 
       .addCase(updateCoupon.fulfilled, (state, action) => {
@@ -106,14 +109,17 @@ const couponSlice = createSlice({
           (c) => c.id === action.payload.id,
         );
         if (index !== -1) state.coupons[index] = action.payload;
+        toast.success("Coupoun updated");
       })
 
       .addCase(deleteCouponById.fulfilled, (state, action) => {
         state.coupons = state.coupons.filter((c) => c.id !== action.payload);
+        toast.success("Coupouns Deleted");
       })
 
       .addCase(deleteAllCoupons.fulfilled, (state) => {
         state.coupons = [];
+        toast.success("All Coupouns Deleted");
       });
   },
 });

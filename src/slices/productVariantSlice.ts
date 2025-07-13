@@ -7,6 +7,7 @@ import type {
 } from "@/interfaces/product-variant";
 import { createProductVariantApi } from "../api/productVariantApi"; // adjust path as needed
 import axiosClient from "@/api/apiClient";
+import { toast } from "react-toastify";
 
 interface ProductVariantState {
   variants: ProductVariant[];
@@ -80,11 +81,13 @@ const productVariantSlice = createSlice({
         } else {
           state.variants.push(action.payload);
         }
+        toast.success("Product Created Successfully");
       })
       .addCase(updateProductVariant.fulfilled, (state, action) => {
         const updated = action.payload;
         const index = state.variants.findIndex((v) => v.id === updated.id);
         if (index !== -1) state.variants[index] = updated;
+        toast.success("Product Created Successfully");
       })
       .addCase(deleteProductVariant.fulfilled, (state, action) => {
         state.variants = state.variants.filter((v) => v.id !== action.payload);

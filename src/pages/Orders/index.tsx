@@ -28,11 +28,12 @@ const TABS = [
     title: "Rejected/Refunded",
     icon: <SquareX className="text-red-600" />,
   },
-];
+] as const;
+type TabKey = "pending" | "in_progress" | "completed" | "rejected";
 
 const DashboardPage: FC = () => {
   const dispatch = useAppDispatch();
-  const [activeTab, setActiveTab] = useState("pending");
+  const [activeTab, setActiveTab] = useState<TabKey>("pending");
 
   const [states, setStates] = useState({
     pending: {
