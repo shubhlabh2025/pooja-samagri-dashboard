@@ -16,50 +16,53 @@ const ProductListSection: React.FC = () => {
   const { products, status, error, pagination } = useAppSelector(
     (state) => state.products,
   );
+
+  const categoriesState = useAppSelector((state) => state.categories);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [query, setQuery] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [showDialog, setShowDialog] = useState(false);
 
-  // Debounce effect for searchText -> query
+  // Debounce searchText -> query
   useEffect(() => {
     const handler = setTimeout(() => {
       setQuery(searchText.trim());
-      setCurrentPage(1); // Always reset to page 1 on search change
+      setCurrentPage(1);
     }, DEBOUNCE_MS);
-
     return () => clearTimeout(handler);
   }, [searchText]);
 
-  // Fetch products on page or query change
+  // Fetch products on change
   useEffect(() => {
     dispatch(
-      fetchProducts({ page: currentPage, pageSize: PAGE_SIZE, q: query }),
+      fetchProducts({
+        page: currentPage,
+        pageSize: PAGE_SIZE,
+        q: query,
+        category_id: categoryId || "",
+      }),
     );
-    console.log("My product");
-    console.log(products);
-  }, [dispatch, currentPage, query]);
+  }, [dispatch, currentPage, query, categoryId]);
 
-  // Focus search input when it opens
+  // Focus search input when opened
   useEffect(() => {
     if (showSearch && inputRef.current) inputRef.current.focus();
   }, [showSearch]);
 
   const displayedProducts = Array.isArray(products) ? products : [];
 
-  // Numbered pagination logic
   const totalPages = pagination?.totalPages || 1;
   const pageButtons = [];
   const MAX_BUTTONS = 5;
   let startPage = Math.max(1, currentPage - Math.floor(MAX_BUTTONS / 2));
   const endPage = Math.min(totalPages, startPage + MAX_BUTTONS - 1);
-
   if (endPage - startPage < MAX_BUTTONS - 1) {
     startPage = Math.max(1, endPage - MAX_BUTTONS + 1);
   }
-
   for (let i = startPage; i <= endPage; i++) {
     pageButtons.push(i);
   }
@@ -69,6 +72,23 @@ const ProductListSection: React.FC = () => {
       <div className="border-b px-6 py-4 text-lg border-l-4 border-blue-500 flex items-center justify-between">
         <span className="font-semibold text-gray-800">Our Products</span>
         <div className="flex gap-2">
+          <div className="flex items-center gap-4 px-8">
+            <select
+              value={categoryId}
+              onChange={(e) => {
+                setCategoryId(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-6 py-2 border border-gray-300 rounded focus:outline-none"
+            >
+              <option value="">All Categories</option>
+              {categoriesState.categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
           {!showSearch && (
             <button
               onClick={() => setShowSearch(true)}
@@ -81,7 +101,9 @@ const ProductListSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Debounced Search Bar (auto-search) */}
+      {/* Category Filter Dropdown */}
+
+      {/* Search Bar */}
       {showSearch && (
         <div className="flex gap-2 px-6 py-2 bg-gray-50 border-b">
           <input
@@ -115,7 +137,7 @@ const ProductListSection: React.FC = () => {
         </div>
       )}
 
-      {/* Loading & Error */}
+      {/* Loading / Error */}
       {status === "loading" && (
         <div>
           {[...Array(6)].map((_, i) => (
@@ -172,7 +194,6 @@ const ProductListSection: React.FC = () => {
                   className="text-red-600 hover:text-red-800 transition"
                   onClick={() => setShowDialog(true)}
                 >
-                  {" "}
                   <Trash2 />
                 </button>
                 <DismissDialog
@@ -193,7 +214,7 @@ const ProductListSection: React.FC = () => {
         })}
       </div>
 
-      {/* Pagination Controls */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex flex-wrap items-center justify-center gap-2 py-4">
           <button

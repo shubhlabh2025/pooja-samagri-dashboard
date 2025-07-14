@@ -4,9 +4,9 @@ import { useEffect, useRef, useState, type FC } from "react";
 import { useNavigate } from "react-router";
 import userAvatar from "../../assets/user.png";
 import { formatDate } from "@/utils/Utils";
-import DismissDialog from "../Common/DismissDialog";
 import { useAppDispatch } from "@/hooks/reduxHooks";
 import { updateOrderStatus } from "@/slices/orderSlice";
+import CommentDialog from "../Common/CommentDialog";
 
 interface Props {
   orders: Order[];
@@ -42,6 +42,8 @@ const OrderAcceptReject: FC<Props> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [showDialog, setShowDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<"accepted" | "rejected">(
     "accepted",
@@ -67,13 +69,23 @@ const OrderAcceptReject: FC<Props> = ({
     (i) => i + 1,
   );
 
-  const handleStatusChange = () => {
-    if (selectedOrderId) {
-      dispatch(
-        updateOrderStatus({ id: selectedOrderId, status: selectedAction }),
+  const handleStatusChange = async (comment: string) => {
+    if (!selectedOrderId) return;
+    setIsLoading(true);
+    try {
+      await dispatch(
+        updateOrderStatus({
+          id: selectedOrderId,
+          status: selectedAction,
+          comment,
+        }),
       );
-      navigate(0);
       setShowDialog(false);
+      navigate(0); // Refresh page
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -183,16 +195,19 @@ const OrderAcceptReject: FC<Props> = ({
         </div>
       )}
 
-      {/* Confirmation Dialog */}
-      <DismissDialog
+      <CommentDialog
         open={showDialog}
-        title={`${selectedAction === "accepted" ? "Approve" : "Reject"} Order`}
-        message={`Are you sure you want to ${
-          selectedAction === "accepted" ? "approve" : "reject"
-        } this order?`}
-        confirmLabel={selectedAction === "accepted" ? "Approve" : "Reject"}
-        cancelLabel="Cancel"
-        onConfirm={handleStatusChange}
+        heading={`${
+          selectedAction.charAt(0).toUpperCase() + selectedAction.slice(1)
+        } Order`}
+        title={`Are you sure you want to ${selectedAction.replace(
+          /_/g,
+          " ",
+        )} this order?`}
+        confirmLabel={isLoading ? "Saving..." : "Submit"}
+        cancelLabel="Dismiss"
+        loading={isLoading}
+        onConfirm={(comment) => handleStatusChange(comment)}
         onCancel={() => setShowDialog(false)}
       />
     </div>

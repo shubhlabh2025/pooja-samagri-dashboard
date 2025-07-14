@@ -327,7 +327,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           + Create Variant
         </button>
       </div>
-     
+
       <div className="flex items-end gap-3 mb-8">
         <Input
           label="Product Name"

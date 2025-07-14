@@ -1,10 +1,17 @@
-import { type FC } from "react";
+import { useEffect, type FC } from "react";
 import ProductListSection from "@/components/products/ProductListSection";
 import { SkeletonTheme } from "react-loading-skeleton";
 
 import { Link } from "react-router";
+import { useAppDispatch } from "@/hooks/reduxHooks";
+import { fetchCategories } from "@/slices/categorySlice";
 
 const Productpage: FC = () => {
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(fetchCategories({ page: 1, pageSize: 50 }));
+  }, []);
   return (
     <div className="space-y-6">
       {/* Page Header */}

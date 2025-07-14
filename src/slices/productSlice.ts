@@ -30,7 +30,14 @@ const productApi = createProductApi(axiosClient);
 // 🔹 1. Fetch all products
 export const fetchProducts = createAsyncThunk(
   "products/fetchAll",
-  async (params: { page?: number; pageSize?: number; q?: string } = {}) => {
+  async (
+    params: {
+      page?: number;
+      pageSize?: number;
+      q?: string;
+      category_id?: string;
+    } = {},
+  ) => {
     const response = await productApi.getAllProducts(params);
     const products = response.data.data; // Array<Product>
     const pagination = response.data.meta; // PaginationMeta

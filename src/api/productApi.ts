@@ -8,13 +8,19 @@ import type {
 
 export const createProductApi = (client: AxiosInstance) => ({
   getAllProducts: (
-    params: { page?: number; pageSize?: number; q?: string } = {},
+    params: {
+      page?: number;
+      pageSize?: number;
+      q?: string;
+      category_id?: string;
+    } = {},
   ) => {
-    const { page = 1, pageSize = 30, q } = params;
+    const { page = 1, pageSize = 30, q, category_id } = params;
     const query = [
       `page=${page}`,
       `limit=${pageSize}`,
       q ? `q=${encodeURIComponent(q)}` : "",
+      category_id ? `category_id=${encodeURIComponent(category_id)}` : "",
     ]
       .filter(Boolean)
       .join("&");

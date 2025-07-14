@@ -15,7 +15,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
         md:translate-x-0 md:static md:inset-0`}
       >
-        <Sidebar />
+        <Sidebar onLinkClick={() => setSidebarOpen(false)} />
       </div>
 
       {/* Overlay for mobile */}
@@ -43,7 +43,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
           </div>
         </div>
 
-        {/* Page Content — aligned left with padding, no centering */}
+        {/* Page Content */}
         <div
           className="flex-1 overflow-y-auto p-6 bg-gray-100"
           style={{ height: "calc(100vh - 64px)" }}
