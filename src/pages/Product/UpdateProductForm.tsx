@@ -21,7 +21,7 @@ import DismissDialog from "@/components/Common/DismissDialog";
 import CategoriesModal from "@/components/Category/CategoriesModalComponent";
 import SubCategoriesModal from "@/components/Category/SubCategoryModalComponent";
 import { fetchCategories } from "@/slices/categorySlice";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type { SubCategories } from "@/interfaces/subcategories";
 
@@ -34,7 +34,7 @@ const productVariantSchema = z
     description: z.string().min(1, "Required"),
     mrp: z.number().min(0, "MRP must be positive"),
     price: z.number().min(0, "Price must be positive"),
-    image: z.array(z.string()).min(1, "At least one image required"),
+    images: z.array(z.string()).min(1, "At least one image required"),
     brand_name: z.string().min(1, "Required"),
     out_of_stock: z.boolean(),
     min_quantity: z.number().optional(),
@@ -327,18 +327,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           + Create Variant
         </button>
       </div>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
+     
       <div className="flex items-end gap-3 mb-8">
         <Input
           label="Product Name"
@@ -442,7 +431,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                   <ImageInputWithURLAssetToggle
                     label="Images"
                     value={variant.images}
-                    error={errors[index]?.image}
+                    error={errors[index]?.images}
                     onChange={(val) => updateVariant(index, "images", val)}
                   />
                 </div>
