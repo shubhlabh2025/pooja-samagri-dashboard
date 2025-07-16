@@ -194,7 +194,7 @@ const ImageUploadComponent: React.FC<Props> = ({
                     e.stopPropagation();
                     removeImage(index);
                   }}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-100 group-hover:opacity-100 transition-opacity-100"
                 >
                   ×
                 </button>
