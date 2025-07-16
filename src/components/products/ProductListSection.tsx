@@ -7,6 +7,9 @@ import { fetchProducts, deleteProduct } from "../../slices/productSlice";
 import { ProductSkeleton } from "../loadingSkeletons/productSkeleton";
 import { ErrorMessage } from "../Common/ErrorMessage";
 import DismissDialog from "../Common/DismissDialog";
+import { fetchSubCategories } from "@/slices/subCategorySlice";
+import type { SubCategories } from "@/interfaces/subcategories";
+import { fetchCategories } from "@/slices/categorySlice";
 
 const PAGE_SIZE = 10;
 const DEBOUNCE_MS = 200;
@@ -14,16 +17,18 @@ const DEBOUNCE_MS = 200;
 const ProductListSection: React.FC = () => {
   const dispatch = useAppDispatch();
   const { products, status, error, pagination } = useAppSelector(
-    (state) => state.products,
+    (state) => state.products
   );
-
-  const categoriesState = useAppSelector((state) => state.categories);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [subCategoryId, setSubCategoryId] = useState("");
+  const [subCategories, setSubCategories] = useState<SubCategories[]>([]);
+  const [categories, setCategories] = useState<SubCategories[]>([]);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const [showDialog, setShowDialog] = useState(false);
 
@@ -43,10 +48,51 @@ const ProductListSection: React.FC = () => {
         page: currentPage,
         pageSize: PAGE_SIZE,
         q: query,
-        category_id: categoryId || "",
-      }),
+        category_id: subCategoryId || categoryId || "",
+      })
     );
-  }, [dispatch, currentPage, query, categoryId]);
+  }, [dispatch, currentPage, query, categoryId, subCategoryId]);
+
+  useEffect(() => {
+    const fetchAndSetCategories = async () => {
+      try {
+        const response = await dispatch(
+          fetchCategories({
+            page: 1,
+            pageSize: 50,
+          })
+        ).unwrap();
+        setCategories(response.categories || []);
+      } catch (error) {
+        console.error("Failed to fetch categories", error);
+      }
+    };
+
+    fetchAndSetCategories();
+  }, [dispatch]);
+
+  const handleCategoryChange = async (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const selectedId = e.target.value;
+    setCategoryId(selectedId);
+    setSubCategoryId(""); // Reset subcategory
+    setCurrentPage(1);
+
+    if (selectedId) {
+      const response = await dispatch(
+        fetchSubCategories({
+          page: 1,
+          pageSize: 50,
+          parent_id: [selectedId],
+        })
+      ).unwrap();
+
+      setSubCategories(response.subCategories || []);
+    } else {
+      setSubCategories([]);
+    }
+  };
 
   // Focus search input when opened
   useEffect(() => {
@@ -72,23 +118,6 @@ const ProductListSection: React.FC = () => {
       <div className="border-b px-6 py-4 text-lg border-l-4 border-blue-500 flex items-center justify-between">
         <span className="font-semibold text-gray-800">Our Products</span>
         <div className="flex gap-2">
-          <div className="flex items-center gap-4 px-8">
-            <select
-              value={categoryId}
-              onChange={(e) => {
-                setCategoryId(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="px-6 py-2 border border-gray-300 rounded focus:outline-none"
-            >
-              <option value="">All Categories</option>
-              {categoriesState.categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
           {!showSearch && (
             <button
               onClick={() => setShowSearch(true)}
@@ -98,6 +127,41 @@ const ProductListSection: React.FC = () => {
               <Search className="w-5 h-5" />
             </button>
           )}
+        </div>
+      </div>
+      <div className="flex flex-row justify-between">
+        <div className="flex items-center gap-2 px-2">
+          <select
+            value={categoryId}
+            onChange={handleCategoryChange}
+            className="px-1 py-2 border border-gray-300 rounded focus:outline-none"
+          >
+            <option value="">All Categories</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-4 px-2">
+          <select
+            value={subCategoryId}
+            onChange={(e) => {
+              setSubCategoryId(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-2 py-2 border border-gray-300 rounded focus:outline-none"
+            disabled={!categoryId}
+          >
+            <option value="">SubCategories</option>
+            {subCategories.map((subcategory) => (
+              <option key={subcategory.id} value={subcategory.id}>
+                {subcategory.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
