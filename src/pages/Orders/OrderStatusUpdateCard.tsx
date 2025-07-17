@@ -37,7 +37,7 @@ const OrderStatusUpdateCard = ({ orderDetails }: OrderDetailMainCardProps) => {
           id: selectedOrderId,
           status: selectedAction,
           comment,
-        }),
+        })
       );
       setShowDialog(false);
       navigate(0); // Refresh page
@@ -106,22 +106,30 @@ const OrderStatusUpdateCard = ({ orderDetails }: OrderDetailMainCardProps) => {
             <p className="text-[14px] leading-4 font-semibold text-[#212121]">
               Current Status: {orderDetails.status}
             </p>
-            <div className="flex gap-2">
-              {getActionButtons().map(({ label, value, color }) => (
-                <button
-                  key={value}
-                  className={`text-xs px-3 py-1.5 ${color} text-white rounded-full shadow hover:shadow-md`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedOrderId(orderDetails.id);
-                    setSelectedAction(value);
-                    setShowDialog(true);
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            {orderDetails.payment_details.status == "created" ? (
+              <div>
+                <span className="p-3 bg-red-500 text-white rounded-2xl font-medium text-[12px]">
+                  Payment Failed
+                </span>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                {getActionButtons().map(({ label, value, color }) => (
+                  <button
+                    key={value}
+                    className={`text-xs px-3 py-1.5 ${color} text-white rounded-full shadow hover:shadow-md`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedOrderId(orderDetails.id);
+                      setSelectedAction(value);
+                      setShowDialog(true);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className="w-[96%] border border-b"></div>
@@ -134,7 +142,7 @@ const OrderStatusUpdateCard = ({ orderDetails }: OrderDetailMainCardProps) => {
         } Order`}
         title={`Are you sure you want to ${selectedAction.replace(
           /_/g,
-          " ",
+          " "
         )} this order?`}
         confirmLabel={isLoading ? "Saving..." : "Submit"}
         cancelLabel="Dismiss"

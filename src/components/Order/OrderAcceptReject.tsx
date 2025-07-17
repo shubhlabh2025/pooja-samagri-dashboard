@@ -46,7 +46,7 @@ const OrderAcceptReject: FC<Props> = ({
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<"accepted" | "rejected">(
-    "accepted",
+    "accepted"
   );
 
   const dispatch = useAppDispatch();
@@ -66,7 +66,7 @@ const OrderAcceptReject: FC<Props> = ({
 
   const totalPages = pagination?.totalPages || 1;
   const pageButtons = [...Array(Math.min(5, totalPages)).keys()].map(
-    (i) => i + 1,
+    (i) => i + 1
   );
 
   const handleStatusChange = async (comment: string) => {
@@ -78,7 +78,7 @@ const OrderAcceptReject: FC<Props> = ({
           id: selectedOrderId,
           status: selectedAction,
           comment,
-        }),
+        })
       );
       setShowDialog(false);
       navigate(0); // Refresh page
@@ -133,30 +133,38 @@ const OrderAcceptReject: FC<Props> = ({
               <div className="text-sm text-black-500 font-semibold">
                 Rs.{order.payment_details.amount.toFixed(2)}
               </div>
-              <div className="flex gap-2">
-                <button
-                  className="text-xs px-3 py-1.5 bg-red-500 text-white rounded-full shadow hover:shadow-md"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedOrderId(order.id);
-                    setSelectedAction("rejected");
-                    setShowDialog(true);
-                  }}
-                >
-                  Reject
-                </button>
-                <button
-                  className="text-xs px-3 py-1.5 bg-green-500 text-white rounded-full shadow hover:shadow-md"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedOrderId(order.id);
-                    setSelectedAction("accepted");
-                    setShowDialog(true);
-                  }}
-                >
-                  Approve
-                </button>
-              </div>
+              {order.payment_details.status == "created" ? (
+                <div>
+                  <span className="p-3 bg-red-500 text-white rounded-2xl text-[12px]">
+                    Payment Failed
+                  </span>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    className="text-xs px-3 py-1.5 bg-red-500 text-white rounded-full shadow hover:shadow-md"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedOrderId(order.id);
+                      setSelectedAction("rejected");
+                      setShowDialog(true);
+                    }}
+                  >
+                    Reject
+                  </button>
+                  <button
+                    className="text-xs px-3 py-1.5 bg-green-500 text-white rounded-full shadow hover:shadow-md"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedOrderId(order.id);
+                      setSelectedAction("accepted");
+                      setShowDialog(true);
+                    }}
+                  >
+                    Approve
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -202,7 +210,7 @@ const OrderAcceptReject: FC<Props> = ({
         } Order`}
         title={`Are you sure you want to ${selectedAction.replace(
           /_/g,
-          " ",
+          " "
         )} this order?`}
         confirmLabel={isLoading ? "Saving..." : "Submit"}
         cancelLabel="Dismiss"
