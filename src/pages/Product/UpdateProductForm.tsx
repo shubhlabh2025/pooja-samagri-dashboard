@@ -267,7 +267,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
         toast.success("Variant updated successfully");
         console.log("toast triger");
         // Navigate back after a short delay (optional)
-        setTimeout(() => navigate(-1), 1000);
+        // setTimeout(() => navigate(-1));
         // Optionally: show toast
       }
     } catch (error) {
