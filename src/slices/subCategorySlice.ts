@@ -43,7 +43,10 @@ export const fetchSubCategories = createAsyncThunk(
   ) => {
     // Default to an empty array if not provided
     const parentIds = params.parent_id || [];
-    const response = await subCategoryApi.getSubCategoriesById(parentIds);
+    const response = await subCategoryApi.getSubCategoriesById({
+      ...params, // Spreads page, pageSize, q
+      ids: parentIds, // Directly use parentIds, which is guaranteed to be string[]
+    });
     const { data, meta } = response.data;
     return { subCategories: data, pagination: meta };
   },

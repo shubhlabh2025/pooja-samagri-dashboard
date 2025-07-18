@@ -37,7 +37,7 @@ const OrderStatusUpdateCard = ({ orderDetails }: OrderDetailMainCardProps) => {
           id: selectedOrderId,
           status: selectedAction,
           comment,
-        })
+        }),
       );
       setShowDialog(false);
       navigate(0); // Refresh page
@@ -142,7 +142,7 @@ const OrderStatusUpdateCard = ({ orderDetails }: OrderDetailMainCardProps) => {
         } Order`}
         title={`Are you sure you want to ${selectedAction.replace(
           /_/g,
-          " "
+          " ",
         )} this order?`}
         confirmLabel={isLoading ? "Saving..." : "Submit"}
         cancelLabel="Dismiss"

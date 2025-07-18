@@ -14,7 +14,7 @@ export const createProductApi = (client: AxiosInstance) => ({
       pageSize?: number;
       q?: string;
       category_id?: string;
-    } = {}
+    } = {},
   ) => {
     const { page = 1, pageSize = 30, q, category_id } = params;
     const query = [

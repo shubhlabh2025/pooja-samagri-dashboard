@@ -30,7 +30,7 @@ import axiosClient from "@/api/apiClient";
 // If Product interface itself already wraps data, adjust accordingly.
 // Based on your console log, the top-level Product type should be for the entire response.
 // Let's create a wrapper type for the API response.
-import type {  Product as ProductDataType } from "@/interfaces/product"; // Renamed to avoid confusion
+import type { Product as ProductDataType } from "@/interfaces/product"; // Renamed to avoid confusion
 
 // Define an interface for the full API response structure
 
@@ -75,14 +75,14 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
 
   const categoriesState = useAppSelector((state) => state.categories);
   const [localSubCategories, setLocalSubCategories] = useState<SubCategories[]>(
-    []
+    [],
   );
 
   const [variants, setVariants] = useState<ExtendedProductVariant[]>([]);
   const [productName, setProductName] = useState<string>("");
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>(
-    {}
+    {},
   );
   const [savingName, setSavingName] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,7 +90,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const subCategoryApi = useMemo(() => createSubCategoryApi(axiosClient), []);
 
   const [categoryModalIndex, setCategoryModalIndex] = useState<number | null>(
-    null
+    null,
   );
   const [subCategoryModalIndex, setSubCategoryModalIndex] = useState<
     number | null
@@ -131,10 +131,10 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
       setIsLoading(true);
       try {
         console.log(`Fetching product with ID: ${productId}`);
-        
+
         // IMPORTANT CHANGE HERE: productResult is the entire API response object
-         const productResult: ProductDataType = await dispatch(
-          fetchProductById(productId)
+        const productResult: ProductDataType = await dispatch(
+          fetchProductById(productId),
         ).unwrap();
 
         // Access the actual product data from the 'data' property
@@ -142,7 +142,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
 
         console.log("Fetching all categories...");
         const categoriesResult = await dispatch(
-          fetchCategories({ page: 1, pageSize: 30, q: query })
+          fetchCategories({ page: 1, pageSize: 30, q: query }),
         ).unwrap();
         console.log("Categories fetched:", categoriesResult);
 
@@ -151,7 +151,13 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
 
         if (categoryIds.length > 0) {
           console.log("Fetching subcategories...");
-          const subRes = await subCategoryApi.getSubCategoriesById(categoryIds);
+          const params = {}; // Or get it from the outer scope if it exists
+
+          const subRes = await subCategoryApi.getSubCategoriesById({
+            ...params, // Spreads any existing page, pageSize from the outer 'params'
+            ids: [...categoryIds], // 'ids' should be an array of strings
+          });
+
           setLocalSubCategories(subRes.data?.data || []);
           console.log("Subcategories fetched:", subRes.data?.data);
         } else {
@@ -166,7 +172,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           productResult.product_variants.length > 0
         ) {
           console.log(
-            "Processing product variants from fetched product data..."
+            "Processing product variants from fetched product data...",
           );
           processedVariants = productResult.product_variants.map(
             (v: ProductVariant) => {
@@ -177,12 +183,12 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                 category_ids: categories,
                 subcategory_ids: subcategories,
               };
-            }
+            },
           );
           setProductName(productResult.product_variants[0]?.name ?? "");
         } else {
           console.log(
-            "No product variants found in product data or productResult.product_variants is empty."
+            "No product variants found in product data or productResult.product_variants is empty.",
           );
           setProductName("");
         }
@@ -234,7 +240,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const updateVariant = <K extends keyof ExtendedProductVariant>(
     index: number,
     field: K,
-    value: ExtendedProductVariant[K]
+    value: ExtendedProductVariant[K],
   ) => {
     let updated = [...variants];
     if (field === "default_variant" && value) {
@@ -271,7 +277,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           updates: {
             name: productName,
           },
-        })
+        }),
       ).unwrap();
       toast.success("Product name updated successfully!");
       setVariants((prev) => prev.map((v) => ({ ...v, name: productName })));
@@ -316,7 +322,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
         const result = await dispatch(createProductVariant(payload)).unwrap();
 
         setVariants((prev) =>
-          prev.map((v, i) => (i === index ? { ...v, ...result } : v))
+          prev.map((v, i) => (i === index ? { ...v, ...result } : v)),
         );
         toast.success("Variant created successfully");
       } else {
@@ -341,7 +347,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           updateProductVariant({
             id: variantToSave.id,
             updates: payload,
-          })
+          }),
         ).unwrap();
         toast.success("Variant updated successfully");
       }
@@ -557,7 +563,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                             updateVariant(
                               index,
                               "category_ids",
-                              variant.category_ids.filter((id) => id !== catId)
+                              variant.category_ids.filter((id) => id !== catId),
                             );
                             updateVariant(index, "subcategory_ids", []);
                           }}
@@ -605,8 +611,8 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                               index,
                               "subcategory_ids",
                               variant.subcategory_ids.filter(
-                                (id) => id !== subId
-                              )
+                                (id) => id !== subId,
+                              ),
                             )
                           }
                           className="ml-1 rounded hover:bg-green-200 p-1"

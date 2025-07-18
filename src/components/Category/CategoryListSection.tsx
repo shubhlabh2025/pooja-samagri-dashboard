@@ -87,7 +87,9 @@ const CategoryListSection: React.FC = () => {
   const [deleteSubItemId, setDeleteSubItemId] = useState<string | null>(null);
 
   // Drag and Drop State for Categories
-  const [categoryDragState, setCategoryDragState] = useState<DragState<Category>>({
+  const [categoryDragState, setCategoryDragState] = useState<
+    DragState<Category>
+  >({
     isDragging: false,
     draggedItem: null,
     dragOverIndex: null,
@@ -96,14 +98,16 @@ const CategoryListSection: React.FC = () => {
     useState<Category[]>(categories);
 
   // Drag and Drop State for Subcategories
-  const [subCategoryDragState, setSubCategoryDragState] = useState<DragState<SubCategory>>({
+  const [subCategoryDragState, setSubCategoryDragState] = useState<
+    DragState<SubCategory>
+  >({
     isDragging: false,
     draggedItem: null,
     dragOverIndex: null,
   });
-  const [localSubCategories, setLocalSubCategories] =
-    useState<SubCategory[]>(subCategoryState.subCategories);
-
+  const [localSubCategories, setLocalSubCategories] = useState<SubCategory[]>(
+    subCategoryState.subCategories,
+  );
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -438,8 +442,9 @@ const CategoryListSection: React.FC = () => {
   // Get subcategories for expanded category from local state
   const subCategoriesForExpandedCategory = localSubCategories
     .filter((s) => s.parent_id === expandedCategoryId)
-    .sort((a, b) =>
-      parseFloat(b.priority.toString()) - parseFloat(a.priority.toString())
+    .sort(
+      (a, b) =>
+        parseFloat(b.priority.toString()) - parseFloat(a.priority.toString()),
     ); // Sort by priority
 
   const handleEditCategory = (category: Category) => {
@@ -663,7 +668,8 @@ const CategoryListSection: React.FC = () => {
                           onDrop={(e) => handleSubDrop(e, subIndex)}
                           className={`flex items-center justify-between px-4 py-2 rounded bg-gray-50 hover:bg-gray-100 border cursor-move transition-all duration-200 ${
                             subCategoryDragState.dragOverIndex === subIndex &&
-                            subCategoryDragState.draggedItem?.parent_id === expandedCategoryId
+                            subCategoryDragState.draggedItem?.parent_id ===
+                              expandedCategoryId
                               ? "border-t-2 border-blue-500 bg-blue-100"
                               : ""
                           } ${

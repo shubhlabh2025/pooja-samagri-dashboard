@@ -5,10 +5,28 @@ import type { CreateSubCategories } from "@/interfaces/subcategories";
 import type { CreateCategoryPayload } from "@/interfaces/category";
 
 export const createSubCategoryApi = (client: AxiosInstance) => ({
-  getSubCategoriesById: (ids: string[]) =>
-    client.get<GetCategoriesResponse>(`/api/sub-categories`, {
-      params: { parent_ids: ids.join(",") },
-    }),
+  getSubCategoriesById: (
+    params: { page?: number; pageSize?: number; ids: string[] } // 'ids' is required and is string[]
+  ) => {
+    const parsedPage = Number(params.page);
+    const parsedPageSize = Number(params.pageSize);
+
+    const page = !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+    const pageSize =
+      !isNaN(parsedPageSize) && parsedPageSize > 0 ? parsedPageSize : 30;
+
+    const queryParts = [`page=${page}`, `limit=${pageSize}`];
+
+    if (params.ids && params.ids.length > 0) {
+      queryParts.push(`parent_ids=${params.ids.join(",")}`);
+    }
+
+    const query = queryParts.join("&");
+    console.log("my query");
+    console.log(query);
+    return client.get<GetCategoriesResponse>(`/api/sub-categories?${query}`);
+  },
+
   getSubCategoryById: (id: string) =>
     client.get<CategoryResponse>(`/api/subCategories/${id}`),
 

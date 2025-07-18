@@ -18,7 +18,7 @@ const DEBOUNCE_MS = 200;
 const ProductListSection: React.FC = () => {
   const dispatch = useAppDispatch();
   const { products, status, error, pagination } = useAppSelector(
-    (state) => state.products
+    (state) => state.products,
   );
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -51,7 +51,7 @@ const ProductListSection: React.FC = () => {
         pageSize: PAGE_SIZE,
         q: query,
         category_id: subCategoryId || categoryId || "",
-      })
+      }),
     );
   }, [dispatch, currentPage, query, categoryId, subCategoryId]);
 
@@ -62,7 +62,7 @@ const ProductListSection: React.FC = () => {
           fetchCategories({
             page: 1,
             pageSize: 50,
-          })
+          }),
         ).unwrap();
         setCategories(response.categories || []);
       } catch (error) {
@@ -74,7 +74,7 @@ const ProductListSection: React.FC = () => {
   }, [dispatch]);
 
   const handleCategoryChange = async (
-    e: React.ChangeEvent<HTMLSelectElement>
+    e: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     const selectedId = e.target.value;
     setCategoryId(selectedId);
@@ -83,9 +83,12 @@ const ProductListSection: React.FC = () => {
 
     if (selectedId) {
       try {
-        const response = await subCategoryApi.getSubCategoriesById([
-          selectedId,
-        ]);
+        const params = {}; // Or get it from the outer scope if it exists
+
+        const response = await subCategoryApi.getSubCategoriesById({
+          ...params, // Spreads any existing page, pageSize from the outer 'params'
+          ids: [selectedId], // 'ids' should be an array of strings
+        });
         setSubCategories(response.data?.data || []);
       } catch (err) {
         console.error("Failed to load subcategories locally", err);

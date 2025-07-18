@@ -46,7 +46,7 @@ const OrderAcceptReject: FC<Props> = ({
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<"accepted" | "rejected">(
-    "accepted"
+    "accepted",
   );
 
   const dispatch = useAppDispatch();
@@ -66,7 +66,7 @@ const OrderAcceptReject: FC<Props> = ({
 
   const totalPages = pagination?.totalPages || 1;
   const pageButtons = [...Array(Math.min(5, totalPages)).keys()].map(
-    (i) => i + 1
+    (i) => i + 1,
   );
 
   const handleStatusChange = async (comment: string) => {
@@ -78,7 +78,7 @@ const OrderAcceptReject: FC<Props> = ({
           id: selectedOrderId,
           status: selectedAction,
           comment,
-        })
+        }),
       );
       setShowDialog(false);
       navigate(0); // Refresh page
@@ -210,7 +210,7 @@ const OrderAcceptReject: FC<Props> = ({
         } Order`}
         title={`Are you sure you want to ${selectedAction.replace(
           /_/g,
-          " "
+          " ",
         )} this order?`}
         confirmLabel={isLoading ? "Saving..." : "Submit"}
         cancelLabel="Dismiss"
