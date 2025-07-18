@@ -75,14 +75,14 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
 
   const categoriesState = useAppSelector((state) => state.categories);
   const [localSubCategories, setLocalSubCategories] = useState<SubCategories[]>(
-    [],
+    []
   );
 
   const [variants, setVariants] = useState<ExtendedProductVariant[]>([]);
   const [productName, setProductName] = useState<string>("");
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>(
-    {},
+    {}
   );
   const [savingName, setSavingName] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,7 +90,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const subCategoryApi = useMemo(() => createSubCategoryApi(axiosClient), []);
 
   const [categoryModalIndex, setCategoryModalIndex] = useState<number | null>(
-    null,
+    null
   );
   const [subCategoryModalIndex, setSubCategoryModalIndex] = useState<
     number | null
@@ -134,7 +134,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
 
         // IMPORTANT CHANGE HERE: productResult is the entire API response object
         const productResult: ProductDataType = await dispatch(
-          fetchProductById(productId),
+          fetchProductById(productId)
         ).unwrap();
 
         // Access the actual product data from the 'data' property
@@ -142,7 +142,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
 
         console.log("Fetching all categories...");
         const categoriesResult = await dispatch(
-          fetchCategories({ page: 1, pageSize: 30, q: query }),
+          fetchCategories({ page: 1, pageSize: 30, q: query })
         ).unwrap();
         console.log("Categories fetched:", categoriesResult);
 
@@ -172,7 +172,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           productResult.product_variants.length > 0
         ) {
           console.log(
-            "Processing product variants from fetched product data...",
+            "Processing product variants from fetched product data..."
           );
           processedVariants = productResult.product_variants.map(
             (v: ProductVariant) => {
@@ -183,12 +183,12 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                 category_ids: categories,
                 subcategory_ids: subcategories,
               };
-            },
+            }
           );
           setProductName(productResult.product_variants[0]?.name ?? "");
         } else {
           console.log(
-            "No product variants found in product data or productResult.product_variants is empty.",
+            "No product variants found in product data or productResult.product_variants is empty."
           );
           setProductName("");
         }
@@ -208,8 +208,10 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   }, [dispatch, productId, query, subCategoryApi]);
 
   const handleProductNameChange = (val: string) => {
+    console.log("handleProductNameChange");
+    console.log(val);
     setProductName(val);
-    setVariants((prev) => prev.map((v) => ({ ...v, name: val })));
+   // setVariants((prev) => prev.map((v) => ({ ...v, name: val })));
   };
 
   const validate = (): boolean => {
@@ -240,7 +242,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const updateVariant = <K extends keyof ExtendedProductVariant>(
     index: number,
     field: K,
-    value: ExtendedProductVariant[K],
+    value: ExtendedProductVariant[K]
   ) => {
     let updated = [...variants];
     if (field === "default_variant" && value) {
@@ -263,11 +265,17 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   };
 
   const handleSaveProductName = async () => {
+    console.log("updating name");
     const currentVariantName = variants[0]?.name;
+    console.log(currentVariantName);
+    console.log(productName);
+    console.log(productId);
+
     if (!productName || !productId || productName === currentVariantName) {
       if (!productName) toast.error("Product name cannot be empty.");
       return;
     }
+    console.log("updating name1");
 
     setSavingName(true);
     try {
@@ -277,9 +285,8 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           updates: {
             name: productName,
           },
-        }),
+        })
       ).unwrap();
-      toast.success("Product name updated successfully!");
       setVariants((prev) => prev.map((v) => ({ ...v, name: productName })));
     } catch (error) {
       console.error("Failed to save product name", error);
@@ -322,7 +329,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
         const result = await dispatch(createProductVariant(payload)).unwrap();
 
         setVariants((prev) =>
-          prev.map((v, i) => (i === index ? { ...v, ...result } : v)),
+          prev.map((v, i) => (i === index ? { ...v, ...result } : v))
         );
         toast.success("Variant created successfully");
       } else {
@@ -347,7 +354,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
           updateProductVariant({
             id: variantToSave.id,
             updates: payload,
-          }),
+          })
         ).unwrap();
         toast.success("Variant updated successfully");
       }
@@ -563,7 +570,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                             updateVariant(
                               index,
                               "category_ids",
-                              variant.category_ids.filter((id) => id !== catId),
+                              variant.category_ids.filter((id) => id !== catId)
                             );
                             updateVariant(index, "subcategory_ids", []);
                           }}
@@ -611,8 +618,8 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
                               index,
                               "subcategory_ids",
                               variant.subcategory_ids.filter(
-                                (id) => id !== subId,
-                              ),
+                                (id) => id !== subId
+                              )
                             )
                           }
                           className="ml-1 rounded hover:bg-green-200 p-1"
