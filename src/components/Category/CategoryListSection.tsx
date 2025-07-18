@@ -16,6 +16,7 @@ import {
 import {
   fetchSubCategories,
   deleteSubCategory,
+  updateSubCategory, // Assuming you have this action
 } from "@/slices/subCategorySlice";
 import Modal from "../Common/Modal";
 import CategoryForm from "@/pages/Category/CategoryForm";
@@ -39,11 +40,12 @@ interface SubCategory {
   name: string;
   image: string;
   parent_id: string;
+  priority: string | number; // Add priority to SubCategory interface
 }
 
-interface DragState {
+interface DragState<T> {
   isDragging: boolean;
-  draggedItem: Category | null;
+  draggedItem: T | null;
   dragOverIndex: number | null;
 }
 
@@ -84,14 +86,24 @@ const CategoryListSection: React.FC = () => {
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
   const [deleteSubItemId, setDeleteSubItemId] = useState<string | null>(null);
 
-  // Drag and Drop State
-  const [dragState, setDragState] = useState<DragState>({
+  // Drag and Drop State for Categories
+  const [categoryDragState, setCategoryDragState] = useState<DragState<Category>>({
     isDragging: false,
     draggedItem: null,
     dragOverIndex: null,
   });
   const [localCategories, setLocalCategories] =
     useState<Category[]>(categories);
+
+  // Drag and Drop State for Subcategories
+  const [subCategoryDragState, setSubCategoryDragState] = useState<DragState<SubCategory>>({
+    isDragging: false,
+    draggedItem: null,
+    dragOverIndex: null,
+  });
+  const [localSubCategories, setLocalSubCategories] =
+    useState<SubCategory[]>(subCategoryState.subCategories);
+
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -113,6 +125,11 @@ const CategoryListSection: React.FC = () => {
   useEffect(() => {
     setLocalCategories(categories);
   }, [categories]);
+
+  // Update local subcategories when subcategories from store change
+  useEffect(() => {
+    setLocalSubCategories(subCategoryState.subCategories);
+  }, [subCategoryState.subCategories]);
 
   // Debounce search
   useEffect(() => {
@@ -137,78 +154,107 @@ const CategoryListSection: React.FC = () => {
     }
   }, [expandedCategoryId, dispatch]);
 
-  // Drag and Drop Handlers
-  const handleDragStart = (
+  // --- Utility for calculating new priority ---
+  const calculateNewPriority = <T extends { priority: string | number }>(
+    items: T[],
+    targetIndex: number,
+  ): number => {
+    // If moving to top (index 0)
+    if (targetIndex === 0) {
+      const nextItem = items[1];
+      if (nextItem) {
+        return parseFloat(nextItem.priority.toString()) + 1000;
+      }
+      return 1000; // Default if no next item
+    }
+
+    // If moving to bottom (last index)
+    if (targetIndex === items.length - 1) {
+      const prevItem = items[targetIndex - 1];
+      if (prevItem) {
+        return parseFloat(prevItem.priority.toString()) / 2;
+      }
+      return 1000; // Default if no previous item
+    }
+
+    // If moving to middle, average the priorities of adjacent items
+    const prevItem = items[targetIndex - 1];
+    const nextItem = items[targetIndex + 1];
+
+    if (prevItem && nextItem) {
+      const prevPriority = parseFloat(prevItem.priority.toString());
+      const nextPriority = parseFloat(nextItem.priority.toString());
+      return (prevPriority + nextPriority) / 2;
+    }
+
+    // Fallback
+    return 1000;
+  };
+
+  // --- Category Drag and Drop Handlers ---
+  const handleCategoryDragStart = (
     e: React.DragEvent<HTMLDivElement>,
     category: Category,
   ) => {
-    setDragState({
+    setCategoryDragState({
       isDragging: true,
       draggedItem: category,
       dragOverIndex: null,
     });
-
-    // Set drag effect
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/html", "");
-
-    // Add some visual feedback
     const target = e.currentTarget as HTMLElement;
     target.style.opacity = "0.5";
   };
 
-  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
-    // Reset visual feedback
+  const handleCategoryDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
     const target = e.currentTarget as HTMLElement;
     target.style.opacity = "1";
-
-    setDragState({
+    setCategoryDragState({
       isDragging: false,
       draggedItem: null,
       dragOverIndex: null,
     });
   };
 
-  const handleDragOver = (
+  const handleCategoryDragOver = (
     e: React.DragEvent<HTMLDivElement>,
     index: number,
   ) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-
-    if (dragState.dragOverIndex !== index) {
-      setDragState((prev) => ({
+    if (categoryDragState.dragOverIndex !== index) {
+      setCategoryDragState((prev) => ({
         ...prev,
         dragOverIndex: index,
       }));
     }
   };
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    // Only clear dragOverIndex if we're actually leaving the drop zone
+  const handleCategoryDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     const relatedTarget = e.relatedTarget as Node | null;
     if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
-      setDragState((prev) => ({
+      setCategoryDragState((prev) => ({
         ...prev,
         dragOverIndex: null,
       }));
     }
   };
 
-  const handleDrop = async (
+  const handleCategoryDrop = async (
     e: React.DragEvent<HTMLDivElement>,
     dropIndex: number,
   ) => {
     e.preventDefault();
 
-    if (!dragState.draggedItem) return;
+    if (!categoryDragState.draggedItem) return;
 
     const draggedIndex = localCategories.findIndex(
-      (cat) => cat.id === dragState.draggedItem!.id,
+      (cat) => cat.id === categoryDragState.draggedItem!.id,
     );
 
     if (draggedIndex === -1 || draggedIndex === dropIndex) {
-      setDragState({
+      setCategoryDragState({
         isDragging: false,
         draggedItem: null,
         dragOverIndex: null,
@@ -216,88 +262,164 @@ const CategoryListSection: React.FC = () => {
       return;
     }
 
-    // Create new array with reordered items
     const newCategories = [...localCategories];
     const [draggedItem] = newCategories.splice(draggedIndex, 1);
     newCategories.splice(dropIndex, 0, draggedItem);
 
-    // Calculate new priority based on position
-    const calculateNewPriority = (
-      categories: Category[],
-      targetIndex: number,
-    ): number => {
-      // If moving to top (index 0)
-      if (targetIndex === 0) {
-        const nextItem = categories[1];
-        if (nextItem) {
-          return parseFloat(nextItem.priority.toString()) + 1000;
-        }
-        return 1000; // Default if no next item
-      }
-
-      // If moving to bottom (last index)
-      if (targetIndex === categories.length - 1) {
-        const prevItem = categories[targetIndex - 1];
-        if (prevItem) {
-          return parseFloat(prevItem.priority.toString()) / 2;
-        }
-        return 1000; // Default if no previous item
-      }
-
-      // If moving to middle, average the priorities of adjacent items
-      const prevItem = categories[targetIndex - 1];
-      const nextItem = categories[targetIndex + 1];
-
-      if (prevItem && nextItem) {
-        const prevPriority = parseFloat(prevItem.priority.toString());
-        const nextPriority = parseFloat(nextItem.priority.toString());
-        return (prevPriority + nextPriority) / 2;
-      }
-
-      // Fallback
-      return 1000;
-    };
-
-    // Calculate new priority for the dragged item
     const newPriority = calculateNewPriority(newCategories, dropIndex);
 
-    // Update the dragged item's priority in the local array
     const updatedCategories = newCategories.map((cat, index) =>
       index === dropIndex ? { ...cat, priority: newPriority } : cat,
     );
 
-    // Update local state immediately for smooth UX
     setLocalCategories(updatedCategories);
 
-    console.log(updatedCategories);
-
-    // Prepare data for backend update
-    const draggedItemData = updatedCategories.find(
+    const categoryToUpdate = updatedCategories.find(
       (cat) => cat.id === draggedItem.id,
     );
 
-    setDragState({
+    setCategoryDragState({
       isDragging: false,
       draggedItem: null,
       dragOverIndex: null,
     });
 
-    // Dispatch action to update backend
-    if (draggedItemData) {
+    if (categoryToUpdate) {
       await dispatch(
         updateCategory({
-          id: draggedItem.id,
+          id: categoryToUpdate.id,
           updates: {
-            name: draggedItem.name,
-            priority: draggedItemData.priority,
-            image: draggedItemData.image,
+            name: categoryToUpdate.name,
+            priority: categoryToUpdate.priority,
+            image: categoryToUpdate.image,
           },
         }),
       );
-
+      // Re-fetch categories to ensure data consistency after drag-drop
       await dispatch(
         fetchCategories({ page: currentPage, pageSize: PAGE_SIZE, q: query }),
       );
+    }
+  };
+
+  // --- Subcategory Drag and Drop Handlers ---
+  const handleSubDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    subCategory: SubCategory,
+  ) => {
+    setSubCategoryDragState({
+      isDragging: true,
+      draggedItem: subCategory,
+      dragOverIndex: null,
+    });
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/html", "");
+    const target = e.currentTarget as HTMLElement;
+    target.style.opacity = "0.5";
+  };
+
+  const handleSubDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    const target = e.currentTarget as HTMLElement;
+    target.style.opacity = "1";
+    setSubCategoryDragState({
+      isDragging: false,
+      draggedItem: null,
+      dragOverIndex: null,
+    });
+  };
+
+  const handleSubDragOver = (
+    e: React.DragEvent<HTMLDivElement>,
+    index: number,
+  ) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (subCategoryDragState.dragOverIndex !== index) {
+      setSubCategoryDragState((prev) => ({
+        ...prev,
+        dragOverIndex: index,
+      }));
+    }
+  };
+
+  const handleSubDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    const relatedTarget = e.relatedTarget as Node | null;
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+      setSubCategoryDragState((prev) => ({
+        ...prev,
+        dragOverIndex: null,
+      }));
+    }
+  };
+
+  const handleSubDrop = async (
+    e: React.DragEvent<HTMLDivElement>,
+    dropIndex: number,
+  ) => {
+    e.preventDefault();
+
+    if (!subCategoryDragState.draggedItem || !expandedCategoryId) return;
+
+    // Filter subcategories for the currently expanded category
+    const currentSubCategories = localSubCategories.filter(
+      (sub) => sub.parent_id === expandedCategoryId,
+    );
+
+    const draggedIndex = currentSubCategories.findIndex(
+      (sub) => sub.id === subCategoryDragState.draggedItem!.id,
+    );
+
+    if (draggedIndex === -1 || draggedIndex === dropIndex) {
+      setSubCategoryDragState({
+        isDragging: false,
+        draggedItem: null,
+        dragOverIndex: null,
+      });
+      return;
+    }
+
+    const newSubCategories = [...currentSubCategories];
+    const [draggedSubItem] = newSubCategories.splice(draggedIndex, 1);
+    newSubCategories.splice(dropIndex, 0, draggedSubItem);
+
+    const newPriority = calculateNewPriority(newSubCategories, dropIndex);
+
+    const updatedSubCategoriesForDisplay = newSubCategories.map((sub, index) =>
+      index === dropIndex ? { ...sub, priority: newPriority } : sub,
+    );
+
+    // Update the localSubCategories state with the reordered items
+    setLocalSubCategories((prev) => {
+      const otherSubCategories = prev.filter(
+        (sub) => sub.parent_id !== expandedCategoryId,
+      );
+      return [...otherSubCategories, ...updatedSubCategoriesForDisplay];
+    });
+
+    const subCategoryToUpdate = updatedSubCategoriesForDisplay.find(
+      (sub) => sub.id === draggedSubItem.id,
+    );
+
+    setSubCategoryDragState({
+      isDragging: false,
+      draggedItem: null,
+      dragOverIndex: null,
+    });
+
+    if (subCategoryToUpdate) {
+      // Dispatch action to update backend
+      await dispatch(
+        updateSubCategory({
+          id: subCategoryToUpdate.id,
+          updates: {
+            name: subCategoryToUpdate.name,
+            priority: subCategoryToUpdate.priority,
+            image: subCategoryToUpdate.image,
+          },
+        }),
+      );
+      // Re-fetch subcategories for consistency
+      await dispatch(fetchSubCategories({ parent_id: [expandedCategoryId] }));
     }
   };
 
@@ -313,10 +435,12 @@ const CategoryListSection: React.FC = () => {
   const pageButtons: number[] = [];
   for (let i = startPage; i <= endPage; i++) pageButtons.push(i);
 
-  // Get subcategories for expanded category
-  const subCategories = subCategoryState.subCategories.filter(
-    (s) => s.parent_id === expandedCategoryId,
-  );
+  // Get subcategories for expanded category from local state
+  const subCategoriesForExpandedCategory = localSubCategories
+    .filter((s) => s.parent_id === expandedCategoryId)
+    .sort((a, b) =>
+      parseFloat(b.priority.toString()) - parseFloat(a.priority.toString())
+    ); // Sort by priority
 
   const handleEditCategory = (category: Category) => {
     setEditCategory(category);
@@ -454,18 +578,18 @@ const CategoryListSection: React.FC = () => {
           <div key={category.id} className="group relative">
             <div
               draggable
-              onDragStart={(e) => handleDragStart(e, category)}
-              onDragEnd={handleDragEnd}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, index)}
+              onDragStart={(e) => handleCategoryDragStart(e, category)}
+              onDragEnd={handleCategoryDragEnd}
+              onDragOver={(e) => handleCategoryDragOver(e, index)}
+              onDragLeave={handleCategoryDragLeave}
+              onDrop={(e) => handleCategoryDrop(e, index)}
               className={`flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 hover:bg-blue-50 gap-3 cursor-move transition-all duration-200 ${
-                dragState.dragOverIndex === index
+                categoryDragState.dragOverIndex === index
                   ? "border-t-2 border-blue-500 bg-blue-50"
                   : ""
               } ${
-                dragState.isDragging &&
-                dragState.draggedItem?.id === category.id
+                categoryDragState.isDragging &&
+                categoryDragState.draggedItem?.id === category.id
                   ? "opacity-50 transform rotate-1"
                   : ""
               }`}
@@ -527,13 +651,32 @@ const CategoryListSection: React.FC = () => {
                   <div className="px-4 py-2 text-gray-400">Loading...</div>
                 ) : (
                   <>
-                    {subCategories.length > 0 ? (
-                      subCategories.map((sub) => (
+                    {subCategoriesForExpandedCategory.length > 0 ? (
+                      subCategoriesForExpandedCategory.map((sub, subIndex) => (
                         <div
                           key={sub.id}
-                          className="flex items-center justify-between px-4 py-2 rounded bg-gray-50 hover:bg-gray-100 border"
+                          draggable
+                          onDragStart={(e) => handleSubDragStart(e, sub)}
+                          onDragEnd={handleSubDragEnd}
+                          onDragOver={(e) => handleSubDragOver(e, subIndex)}
+                          onDragLeave={handleSubDragLeave}
+                          onDrop={(e) => handleSubDrop(e, subIndex)}
+                          className={`flex items-center justify-between px-4 py-2 rounded bg-gray-50 hover:bg-gray-100 border cursor-move transition-all duration-200 ${
+                            subCategoryDragState.dragOverIndex === subIndex &&
+                            subCategoryDragState.draggedItem?.parent_id === expandedCategoryId
+                              ? "border-t-2 border-blue-500 bg-blue-100"
+                              : ""
+                          } ${
+                            subCategoryDragState.isDragging &&
+                            subCategoryDragState.draggedItem?.id === sub.id
+                              ? "opacity-50 transform rotate-1"
+                              : ""
+                          }`}
                         >
                           <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing">
+                              <GripVertical className="w-4 h-4" />
+                            </div>
                             <img
                               src={sub.image}
                               alt={sub.name}

@@ -50,7 +50,7 @@ export const fetchProductById = createAsyncThunk(
   "products/fetchById",
   async (id: string) => {
     const response = await productApi.getProductById(id);
-    return response.data;
+    return response.data.data;
   },
 );
 

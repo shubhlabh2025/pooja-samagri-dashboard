@@ -7,9 +7,10 @@ import { fetchProducts, deleteProduct } from "../../slices/productSlice";
 import { ProductSkeleton } from "../loadingSkeletons/productSkeleton";
 import { ErrorMessage } from "../Common/ErrorMessage";
 import DismissDialog from "../Common/DismissDialog";
-import { fetchSubCategories } from "@/slices/subCategorySlice";
 import type { SubCategories } from "@/interfaces/subcategories";
 import { fetchCategories } from "@/slices/categorySlice";
+import { createSubCategoryApi } from "@/api/subCategoriesApi";
+import axiosClient from "@/api/apiClient";
 
 const PAGE_SIZE = 10;
 const DEBOUNCE_MS = 200;
@@ -31,6 +32,7 @@ const ProductListSection: React.FC = () => {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [showDialog, setShowDialog] = useState(false);
+  const subCategoryApi = createSubCategoryApi(axiosClient);
 
   // Debounce searchText -> query
   useEffect(() => {
@@ -80,24 +82,19 @@ const ProductListSection: React.FC = () => {
     setCurrentPage(1);
 
     if (selectedId) {
-      const response = await dispatch(
-        fetchSubCategories({
-          page: 1,
-          pageSize: 50,
-          parent_id: [selectedId],
-        })
-      ).unwrap();
-
-      setSubCategories(response.subCategories || []);
+      try {
+        const response = await subCategoryApi.getSubCategoriesById([
+          selectedId,
+        ]);
+        setSubCategories(response.data?.data || []);
+      } catch (err) {
+        console.error("Failed to load subcategories locally", err);
+        setSubCategories([]);
+      }
     } else {
       setSubCategories([]);
     }
   };
-
-  // Focus search input when opened
-  useEffect(() => {
-    if (showSearch && inputRef.current) inputRef.current.focus();
-  }, [showSearch]);
 
   const displayedProducts = Array.isArray(products) ? products : [];
 

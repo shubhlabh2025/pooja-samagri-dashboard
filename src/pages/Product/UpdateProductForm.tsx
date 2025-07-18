@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
 import { fetchProductById, updateProductName } from "@/slices/productSlice";
 import Input from "@/components/Form/Input";
@@ -24,6 +24,15 @@ import { fetchCategories } from "@/slices/categorySlice";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type { SubCategories } from "@/interfaces/subcategories";
+import { createSubCategoryApi } from "@/api/subCategoriesApi";
+import axiosClient from "@/api/apiClient";
+// Assuming your Product interface for the API response
+// If Product interface itself already wraps data, adjust accordingly.
+// Based on your console log, the top-level Product type should be for the entire response.
+// Let's create a wrapper type for the API response.
+import type {  Product as ProductDataType } from "@/interfaces/product"; // Renamed to avoid confusion
+
+// Define an interface for the full API response structure
 
 const productVariantSchema = z
   .object({
@@ -64,51 +73,45 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const [showDialog, setShowDialog] = useState(false);
   const [query] = useState("");
 
-  const productFromStore = useAppSelector((state) =>
-    state.products.products.find((p) => p.id === productId),
-  );
-  const selectedProduct = useAppSelector(
-    (state) => state.products.selectedProduct,
-  );
-
-  // Categories/subcategories from global state
   const categoriesState = useAppSelector((state) => state.categories);
-  const subCategoriesState = useAppSelector((state) => state.subCategories);
+  const [localSubCategories, setLocalSubCategories] = useState<SubCategories[]>(
+    []
+  );
 
   const [variants, setVariants] = useState<ExtendedProductVariant[]>([]);
   const [productName, setProductName] = useState<string>("");
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>(
-    {},
+    {}
   );
   const [savingName, setSavingName] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Modals control
+  const subCategoryApi = useMemo(() => createSubCategoryApi(axiosClient), []);
+
   const [categoryModalIndex, setCategoryModalIndex] = useState<number | null>(
-    null,
+    null
   );
   const [subCategoryModalIndex, setSubCategoryModalIndex] = useState<
     number | null
   >(null);
 
-  // Utility functions to get category/subcategory names
   const getCategoryName = (id: string) =>
     categoriesState.categories.find((c) => c.id === id)?.name || id;
   const getSubCategoryName = (id: string) =>
-    subCategoriesState.subCategories.find((sc) => sc.id === id)?.name || id;
+    localSubCategories.find((sc) => sc.id === id)?.name || id;
 
-  // Function to extract categories and subcategories from API response
   const extractCategoriesFromVariant = (variant: ProductVariant) => {
     const categories: string[] = [];
     const subcategories: string[] = [];
 
     if (variant.categories && Array.isArray(variant.categories)) {
       variant.categories.forEach((cat: SubCategories) => {
+        // Based on your API response, categories explicitly have parent_id: null for main categories
         if (cat.parent_id === null) {
-          // This is a main category
           categories.push(cat.id);
-        } else {
-          // This is a subcategory
+        } else if (cat.parent_id) {
+          // If parent_id exists and is not null, it's a subcategory
           subcategories.push(cat.id);
         }
       });
@@ -118,32 +121,85 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   };
 
   useEffect(() => {
-    if (!productFromStore && productId) {
-      dispatch(fetchProductById(productId));
-    }
-  }, [dispatch, productFromStore, productId]);
+    const fetchProductAndCategories = async () => {
+      if (!productId) {
+        console.warn("No productId provided. Cannot fetch product details.");
+        setIsLoading(false);
+        return;
+      }
 
-  useEffect(() => {
-    dispatch(fetchCategories({ page: 1, pageSize: 30, q: query }));
-  }, [dispatch, query]);
+      setIsLoading(true);
+      try {
+        console.log(`Fetching product with ID: ${productId}`);
+        
+        // IMPORTANT CHANGE HERE: productResult is the entire API response object
+         const productResult: ProductDataType = await dispatch(
+          fetchProductById(productId)
+        ).unwrap();
 
-  useEffect(() => {
-    const prod = productFromStore || selectedProduct;
-    if (prod && prod.product_variants) {
-      const extendedVariants = prod.product_variants.map(
-        (v: ProductVariant) => {
-          const { categories, subcategories } = extractCategoriesFromVariant(v);
-          return {
-            ...v,
-            category_ids: categories,
-            subcategory_ids: subcategories,
-          };
-        },
-      );
-      setVariants(extendedVariants);
-      setProductName(prod.product_variants[0]?.name ?? "");
-    }
-  }, [productFromStore, selectedProduct]);
+        // Access the actual product data from the 'data' property
+        // const productResult: ProductDataType = productApiResponseEntity.data;
+
+        console.log("Fetching all categories...");
+        const categoriesResult = await dispatch(
+          fetchCategories({ page: 1, pageSize: 30, q: query })
+        ).unwrap();
+        console.log("Categories fetched:", categoriesResult);
+
+        const categoryIds = categoriesResult.categories.map((c) => c.id);
+        console.log("Main category IDs for subcategory fetch:", categoryIds);
+
+        if (categoryIds.length > 0) {
+          console.log("Fetching subcategories...");
+          const subRes = await subCategoryApi.getSubCategoriesById(categoryIds);
+          setLocalSubCategories(subRes.data?.data || []);
+          console.log("Subcategories fetched:", subRes.data?.data);
+        } else {
+          setLocalSubCategories([]);
+          console.log("No main categories found, skipping subcategory fetch.");
+        }
+
+        let processedVariants: ExtendedProductVariant[] = [];
+        // Now, correctly access product_variants from productResult.data
+        if (
+          productResult?.product_variants &&
+          productResult.product_variants.length > 0
+        ) {
+          console.log(
+            "Processing product variants from fetched product data..."
+          );
+          processedVariants = productResult.product_variants.map(
+            (v: ProductVariant) => {
+              const { categories, subcategories } =
+                extractCategoriesFromVariant(v);
+              return {
+                ...v,
+                category_ids: categories,
+                subcategory_ids: subcategories,
+              };
+            }
+          );
+          setProductName(productResult.product_variants[0]?.name ?? "");
+        } else {
+          console.log(
+            "No product variants found in product data or productResult.product_variants is empty."
+          );
+          setProductName("");
+        }
+        setVariants(processedVariants);
+        console.log("Variants state updated:", processedVariants);
+      } catch (err) {
+        console.error("Failed to fetch product or categories:", err);
+        toast.error("Failed to load product details.");
+        setVariants([]);
+        setProductName("");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProductAndCategories();
+  }, [dispatch, productId, query, subCategoryApi]);
 
   const handleProductNameChange = (val: string) => {
     setProductName(val);
@@ -178,17 +234,15 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const updateVariant = <K extends keyof ExtendedProductVariant>(
     index: number,
     field: K,
-    value: ExtendedProductVariant[K],
+    value: ExtendedProductVariant[K]
   ) => {
     let updated = [...variants];
     if (field === "default_variant" && value) {
-      // Make this variant default, others false
       updated = updated.map((v, i) => ({
         ...v,
         default_variant: i === index,
       }));
     } else if (field === "default_variant" && !value) {
-      // Prevent unchecking if this is the only default
       const isOnlyDefault =
         updated.filter((v) => v.default_variant).length === 1 &&
         updated[index].default_variant;
@@ -203,86 +257,123 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   };
 
   const handleSaveProductName = async () => {
-    if (!productName) return;
+    const currentVariantName = variants[0]?.name;
+    if (!productName || !productId || productName === currentVariantName) {
+      if (!productName) toast.error("Product name cannot be empty.");
+      return;
+    }
+
     setSavingName(true);
     try {
-      for (let i = 0; i < variants.length; i++) {
-        await dispatch(
-          updateProductName({
-            id: productId ?? "",
-            updates: {
-              name: productName,
-            },
-          }),
-        );
-      }
-      // Optionally: show toast
+      await dispatch(
+        updateProductName({
+          id: productId,
+          updates: {
+            name: productName,
+          },
+        })
+      ).unwrap();
+      toast.success("Product name updated successfully!");
+      setVariants((prev) => prev.map((v) => ({ ...v, name: productName })));
     } catch (error) {
       console.error("Failed to save product name", error);
+      toast.error("Failed to update product name.");
+    } finally {
+      setSavingName(false);
     }
-    setSavingName(false);
   };
 
   const handleSaveVariant = async (index: number) => {
-    if (!validate()) return;
-    const variant = {
+    if (!validate()) {
+      toast.error("Please correct the errors in the form.");
+      return;
+    }
+
+    const variantToSave = {
       ...variants[index],
       name: productName,
       product_id: productId ?? "",
     };
 
     try {
-      if (!variant.id) {
-        // --- CREATE ---
-        const cleaned = omitKeys(variant, [
+      if (!variantToSave.id) {
+        const cleaned = omitKeys(variantToSave, [
           "id",
           "categories",
           "createdAt",
           "updatedAt",
+          "category_ids",
+          "subcategory_ids",
         ]);
-        const result = await dispatch(createProductVariant(cleaned)).unwrap();
-        // Now update the local state with new id
+
+        const payload = {
+          ...cleaned,
+          product_id: productId!,
+          category_ids: variants[index].category_ids,
+          subcategory_ids: variants[index].subcategory_ids,
+        };
+
+        const result = await dispatch(createProductVariant(payload)).unwrap();
+
         setVariants((prev) =>
-          prev.map((v, i) => (i === index ? { ...v, ...result } : v)),
+          prev.map((v, i) => (i === index ? { ...v, ...result } : v))
         );
         toast.success("Variant created successfully");
-
-        // Optionally: show toast
       } else {
-        // --- UPDATE ---
-        const cleaned = omitKeys(variant, [
+        const cleaned = omitKeys(variantToSave, [
           "id",
           "product_id",
           "categories",
           "name",
           "createdAt",
           "updatedAt",
+          "category_ids",
+          "subcategory_ids",
         ]);
+
+        const payload = {
+          ...cleaned,
+          category_ids: variants[index].category_ids,
+          subcategory_ids: variants[index].subcategory_ids,
+        };
+
         await dispatch(
           updateProductVariant({
-            id: variant.id,
-            updates: cleaned,
-          }),
-        );
+            id: variantToSave.id,
+            updates: payload,
+          })
+        ).unwrap();
         toast.success("Variant updated successfully");
-        console.log("toast triger");
-        // Navigate back after a short delay (optional)
-        // setTimeout(() => navigate(-1));
-        // Optionally: show toast
       }
     } catch (error) {
       console.error("Failed to save variant", error);
+      toast.error("Failed to save variant.");
     }
   };
 
   const handleDeleteVariant = async (index: number) => {
     const variant = variants[index];
-    try {
-      await dispatch(deleteProductVariant(variant.id));
+    if (!variant.id) {
       setVariants((prev) => prev.filter((_, i) => i !== index));
       setExpandedIndex(null);
+      toast.info("Unsaved variant removed.");
+      return;
+    }
+    setShowDialog(true);
+  };
+
+  const handleConfirmDelete = async (index: number) => {
+    const variant = variants[index];
+    try {
+      await dispatch(deleteProductVariant(variant.id)).unwrap();
+      setVariants((prev) => prev.filter((_, i) => i !== index));
+      setExpandedIndex(null);
+      toast.success("Variant deleted successfully");
     } catch (error) {
       console.error("Failed to delete variant", error);
+      toast.error("Failed to delete variant.");
+    } finally {
+      setShowDialog(false);
     }
   };
 
@@ -290,6 +381,7 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
     const newVariant: ExtendedProductVariant = {
       ...defaultVariant(),
       name: productName,
+      product_id: productId || "",
       category_ids: [],
       subcategory_ids: [],
     };
@@ -300,6 +392,14 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
   const handleExpand = (index: number) => {
     setExpandedIndex(expandedIndex === index ? null : index);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-lg text-gray-700">Loading product details...</p>
+      </div>
+    );
+  }
 
   return (
     <form className="space-y-8">
@@ -347,246 +447,254 @@ const UpdateProductForm: React.FC<{ productId?: string }> = ({
 
       {/* Variant List */}
       <div className="space-y-4">
-        {variants.map((variant, index) => (
-          <div
-            key={variant.id || index}
-            className="bg-white border border-gray-100 rounded-md shadow-sm"
-          >
-            {/* Collapsible header */}
+        {variants.length > 0 ? (
+          variants.map((variant, index) => (
             <div
-              className="flex items-center justify-between px-6 py-4 cursor-pointer"
-              onClick={() => handleExpand(index)}
+              key={variant.id || `new-${index}`}
+              className="bg-white border border-gray-100 rounded-md shadow-sm"
             >
-              <span className="font-medium text-gray-700">
-                {variant.display_label || `Variant ${index + 1}`}
-              </span>
-              <span>
-                {expandedIndex === index ? <ChevronUp /> : <ChevronDown />}
-              </span>
-            </div>
-            {/* Collapsible content */}
-            {expandedIndex === index && (
-              <div className="p-6 space-y-6 border-t">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input
-                    label="Variant Quantity"
-                    value={variant.display_label}
-                    error={errors[index]?.display_label}
-                    onChange={(val) =>
-                      updateVariant(index, "display_label", val)
-                    }
-                  />
-                  <Input
-                    label="Brand Name"
-                    value={variant.brand_name}
-                    error={errors[index]?.brand_name}
-                    onChange={(val) => updateVariant(index, "brand_name", val)}
-                  />
-                  <Input
-                    label="MRP"
-                    type="number"
-                    value={variant.mrp?.toString() || ""}
-                    error={errors[index]?.mrp}
-                    onChange={(val) => updateVariant(index, "mrp", +val)}
-                  />
-                  <Input
-                    label="Price"
-                    type="number"
-                    value={variant.price?.toString() || ""}
-                    error={errors[index]?.price}
-                    onChange={(val) => updateVariant(index, "price", +val)}
-                  />
-                  <Input
-                    label="Min Quantity"
-                    type="number"
-                    value={variant.min_quantity?.toString() || ""}
-                    onChange={(val) =>
-                      updateVariant(index, "min_quantity", +val)
-                    }
-                  />
-                  <Input
-                    label="Max Quantity"
-                    type="number"
-                    value={variant.max_quantity?.toString() || ""}
-                    onChange={(val) =>
-                      updateVariant(index, "max_quantity", +val)
-                    }
-                  />
-                  <Input
-                    label="Total Available Quantity"
-                    type="number"
-                    value={variant.total_available_quantity?.toString() || ""}
-                    error={errors[index]?.total_available_quantity}
-                    onChange={(val) =>
-                      updateVariant(index, "total_available_quantity", +val)
-                    }
-                  />
-                  <TextArea
-                    label="Description"
-                    value={variant.description}
-                    error={errors[index]?.description}
-                    onChange={(val) => updateVariant(index, "description", val)}
-                  />
-
-                  <ImageInputWithURLAssetToggle
-                    label="Images"
-                    value={variant.images}
-                    error={errors[index]?.images}
-                    onChange={(val) => updateVariant(index, "images", val)}
-                  />
-                </div>
-
-                {/* Categories Section */}
-                <div className="mb-2 mt-4">
-                  <span>Select Categories</span>
-                </div>
-                <div className="flex items-center flex-wrap gap-2 mb-2 mt-2 px-1">
-                  {variant.category_ids.map((catId) => (
-                    <span
-                      key={catId}
-                      className="inline-flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold"
-                    >
-                      {getCategoryName(catId)}
-                      <button
-                        onClick={() => {
-                          updateVariant(
-                            index,
-                            "category_ids",
-                            variant.category_ids.filter((id) => id !== catId),
-                          );
-                          updateVariant(index, "subcategory_ids", []);
-                        }}
-                        className="ml-1 rounded hover:bg-blue-200 p-1"
-                        type="button"
-                      >
-                        <X size={14} />
-                      </button>
-                    </span>
-                  ))}
-                  <button
-                    type="button"
-                    className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold hover:bg-blue-200"
-                    onClick={() => setCategoryModalIndex(index)}
-                  >
-                    <Plus size={14} className="mr-1" /> Add Categories
-                  </button>
-                </div>
-
-                {/* Category modal for this variant */}
-                <CategoriesModal
-                  open={categoryModalIndex === index}
-                  selectedCategoryIds={variant.category_ids}
-                  onClose={() => setCategoryModalIndex(null)}
-                  onSave={(ids) => {
-                    updateVariant(index, "category_ids", ids);
-                    setCategoryModalIndex(null);
-                  }}
-                />
-
-                {/* Subcategories Section */}
-                <div className="mb-2 mt-4">
-                  <span>Select Subcategories</span>
-                </div>
-                <div className="flex items-center flex-wrap gap-2 mb-2 mt-2 px-1">
-                  {variant.subcategory_ids?.map((subId) => (
-                    <span
-                      key={subId}
-                      className="inline-flex items-center bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold"
-                    >
-                      {getSubCategoryName(subId)}
-                      <button
-                        onClick={() =>
-                          updateVariant(
-                            index,
-                            "subcategory_ids",
-                            variant.subcategory_ids.filter(
-                              (id) => id !== subId,
-                            ),
-                          )
-                        }
-                        className="ml-1 rounded hover:bg-green-200 p-1"
-                        type="button"
-                      >
-                        <X size={14} />
-                      </button>
-                    </span>
-                  ))}
-                  <button
-                    type="button"
-                    className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold hover:bg-green-200"
-                    onClick={() => {
-                      if (variant.category_ids.length === 0) {
-                        alert("Please select category first");
-                      } else {
-                        setSubCategoryModalIndex(index);
-                      }
-                    }}
-                  >
-                    <Plus size={14} className="mr-1" /> Add Subcategories
-                  </button>
-                </div>
-
-                {/* SubCategory modal for this variant */}
-                <SubCategoriesModal
-                  open={subCategoryModalIndex === index}
-                  parentCategoryIds={variant.category_ids}
-                  selectedSubCategoryIds={variant.subcategory_ids}
-                  onClose={() => setSubCategoryModalIndex(null)}
-                  onSave={(ids) => {
-                    updateVariant(index, "subcategory_ids", ids);
-                    setSubCategoryModalIndex(null);
-                  }}
-                />
-
-                <div>
-                  <Checkbox
-                    label="Out of Stock"
-                    checked={variant.out_of_stock}
-                    onChange={(val) =>
-                      updateVariant(index, "out_of_stock", val)
-                    }
-                  />
-                  <Checkbox
-                    label="Default Variant"
-                    checked={variant.default_variant}
-                    onChange={(val) =>
-                      updateVariant(index, "default_variant", val)
-                    }
-                  />
-                </div>
-                {/* Action buttons */}
-                <div className="flex gap-4 justify-end">
-                  <button
-                    type="button"
-                    className="bg-red-100 text-red-700 px-4 py-2 rounded"
-                    onClick={() => setShowDialog(true)}
-                  >
-                    Delete
-                  </button>
-                  <DismissDialog
-                    open={showDialog}
-                    title="Delete Product"
-                    message="Are you sure you want to delete this Product?."
-                    confirmLabel="Delete"
-                    cancelLabel="Cancel"
-                    onConfirm={() => {
-                      handleDeleteVariant(index);
-                      setShowDialog(false);
-                    }}
-                    onCancel={() => setShowDialog(false)}
-                  />
-                  <button
-                    type="button"
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                    onClick={() => handleSaveVariant(index)}
-                  >
-                    Save
-                  </button>
-                </div>
+              {/* Collapsible header */}
+              <div
+                className="flex items-center justify-between px-6 py-4 cursor-pointer"
+                onClick={() => handleExpand(index)}
+              >
+                <span className="font-medium text-gray-700">
+                  {variant.display_label || `Variant ${index + 1}`}
+                </span>
+                <span>
+                  {expandedIndex === index ? <ChevronUp /> : <ChevronDown />}
+                </span>
               </div>
-            )}
-          </div>
-        ))}
+              {/* Collapsible content */}
+              {expandedIndex === index && (
+                <div className="p-6 space-y-6 border-t">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input
+                      label="Variant Quantity"
+                      value={variant.display_label}
+                      error={errors[index]?.display_label}
+                      onChange={(val) =>
+                        updateVariant(index, "display_label", val)
+                      }
+                    />
+                    <Input
+                      label="Brand Name"
+                      value={variant.brand_name}
+                      error={errors[index]?.brand_name}
+                      onChange={(val) =>
+                        updateVariant(index, "brand_name", val)
+                      }
+                    />
+                    <Input
+                      label="MRP"
+                      type="number"
+                      value={variant.mrp?.toString() || ""}
+                      error={errors[index]?.mrp}
+                      onChange={(val) => updateVariant(index, "mrp", +val)}
+                    />
+                    <Input
+                      label="Price"
+                      type="number"
+                      value={variant.price?.toString() || ""}
+                      error={errors[index]?.price}
+                      onChange={(val) => updateVariant(index, "price", +val)}
+                    />
+                    <Input
+                      label="Min Quantity"
+                      type="number"
+                      value={variant.min_quantity?.toString() || ""}
+                      onChange={(val) =>
+                        updateVariant(index, "min_quantity", +val)
+                      }
+                    />
+                    <Input
+                      label="Max Quantity"
+                      type="number"
+                      value={variant.max_quantity?.toString() || ""}
+                      onChange={(val) =>
+                        updateVariant(index, "max_quantity", +val)
+                      }
+                    />
+                    <Input
+                      label="Total Available Quantity"
+                      type="number"
+                      value={variant.total_available_quantity?.toString() || ""}
+                      error={errors[index]?.total_available_quantity}
+                      onChange={(val) =>
+                        updateVariant(index, "total_available_quantity", +val)
+                      }
+                    />
+                    <TextArea
+                      label="Description"
+                      value={variant.description}
+                      error={errors[index]?.description}
+                      onChange={(val) =>
+                        updateVariant(index, "description", val)
+                      }
+                    />
+
+                    <ImageInputWithURLAssetToggle
+                      label="Images"
+                      value={variant.images}
+                      error={errors[index]?.images}
+                      onChange={(val) => updateVariant(index, "images", val)}
+                    />
+                  </div>
+
+                  {/* Categories Section */}
+                  <div className="mb-2 mt-4">
+                    <span>Select Categories</span>
+                  </div>
+                  <div className="flex items-center flex-wrap gap-2 mb-2 mt-2 px-1">
+                    {variant.category_ids.map((catId) => (
+                      <span
+                        key={catId}
+                        className="inline-flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold"
+                      >
+                        {getCategoryName(catId)}
+                        <button
+                          onClick={() => {
+                            updateVariant(
+                              index,
+                              "category_ids",
+                              variant.category_ids.filter((id) => id !== catId)
+                            );
+                            updateVariant(index, "subcategory_ids", []);
+                          }}
+                          className="ml-1 rounded hover:bg-blue-200 p-1"
+                          type="button"
+                        >
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ))}
+                    <button
+                      type="button"
+                      className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold hover:bg-blue-200"
+                      onClick={() => setCategoryModalIndex(index)}
+                    >
+                      <Plus size={14} className="mr-1" /> Add Categories
+                    </button>
+                  </div>
+
+                  {/* Category modal for this variant */}
+                  <CategoriesModal
+                    open={categoryModalIndex === index}
+                    selectedCategoryIds={variant.category_ids}
+                    onClose={() => setCategoryModalIndex(null)}
+                    onSave={(ids) => {
+                      updateVariant(index, "category_ids", ids);
+                      setCategoryModalIndex(null);
+                    }}
+                  />
+
+                  {/* Subcategories Section */}
+                  <div className="mb-2 mt-4">
+                    <span>Select Subcategories</span>
+                  </div>
+                  <div className="flex items-center flex-wrap gap-2 mb-2 mt-2 px-1">
+                    {variant.subcategory_ids?.map((subId) => (
+                      <span
+                        key={subId}
+                        className="inline-flex items-center bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold"
+                      >
+                        {getSubCategoryName(subId)}
+                        <button
+                          onClick={() =>
+                            updateVariant(
+                              index,
+                              "subcategory_ids",
+                              variant.subcategory_ids.filter(
+                                (id) => id !== subId
+                              )
+                            )
+                          }
+                          className="ml-1 rounded hover:bg-green-200 p-1"
+                          type="button"
+                        >
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ))}
+                    <button
+                      type="button"
+                      className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold hover:bg-green-200"
+                      onClick={() => {
+                        if (variant.category_ids.length === 0) {
+                          toast.warn("Please select a category first.");
+                        } else {
+                          setSubCategoryModalIndex(index);
+                        }
+                      }}
+                    >
+                      <Plus size={14} className="mr-1" /> Add Subcategories
+                    </button>
+                  </div>
+
+                  {/* SubCategory modal for this variant */}
+                  <SubCategoriesModal
+                    open={subCategoryModalIndex === index}
+                    parentCategoryIds={variant.category_ids}
+                    selectedSubCategoryIds={variant.subcategory_ids}
+                    onClose={() => setSubCategoryModalIndex(null)}
+                    onSave={(ids) => {
+                      updateVariant(index, "subcategory_ids", ids);
+                      setSubCategoryModalIndex(null);
+                    }}
+                  />
+
+                  <div>
+                    <Checkbox
+                      label="Out of Stock"
+                      checked={variant.out_of_stock}
+                      onChange={(val) =>
+                        updateVariant(index, "out_of_stock", val)
+                      }
+                    />
+                    <Checkbox
+                      label="Default Variant"
+                      checked={variant.default_variant}
+                      onChange={(val) =>
+                        updateVariant(index, "default_variant", val)
+                      }
+                    />
+                  </div>
+                  {/* Action buttons */}
+                  <div className="flex gap-4 justify-end">
+                    <button
+                      type="button"
+                      className="bg-red-100 text-red-700 px-4 py-2 rounded"
+                      onClick={() => handleDeleteVariant(index)}
+                    >
+                      Delete
+                    </button>
+                    <DismissDialog
+                      open={showDialog}
+                      title="Delete Product"
+                      message="Are you sure you want to delete this Product Variant? This action cannot be undone."
+                      confirmLabel="Delete"
+                      cancelLabel="Cancel"
+                      onConfirm={() => handleConfirmDelete(index)}
+                      onCancel={() => setShowDialog(false)}
+                    />
+                    <button
+                      type="button"
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                      onClick={() => handleSaveVariant(index)}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-500 text-center py-4">
+            No variants found for this product. Click "Create Variant" to add
+            one.
+          </p>
+        )}
       </div>
     </form>
   );

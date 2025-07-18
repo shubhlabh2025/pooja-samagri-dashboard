@@ -5,6 +5,7 @@ import type {
   CreateProductVariant,
   ProductVariant,
 } from "@/interfaces/product-variant";
+import type { ApiResponse } from "@/interfaces/api-response";
 
 export const createProductApi = (client: AxiosInstance) => ({
   getAllProducts: (
@@ -13,7 +14,7 @@ export const createProductApi = (client: AxiosInstance) => ({
       pageSize?: number;
       q?: string;
       category_id?: string;
-    } = {},
+    } = {}
   ) => {
     const { page = 1, pageSize = 30, q, category_id } = params;
     const query = [
@@ -26,7 +27,8 @@ export const createProductApi = (client: AxiosInstance) => ({
       .join("&");
     return client.get<GetAllProductsResponse>(`/api/products?${query}`);
   },
-  getProductById: (id: string) => client.get<Product>(`/api/products/${id}`),
+  getProductById: (id: string) =>
+    client.get<ApiResponse<Product>>(`/api/products/${id}`),
 
   deleteProduct: (id: string) => client.delete(`/api/products/${id}`),
 
