@@ -11,7 +11,7 @@ interface SubCategoriesModalProps {
   onSave: (ids: string[]) => void;
 }
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 50;
 const DEBOUNCE_MS = 200;
 
 const SubCategoriesModal: React.FC<SubCategoriesModalProps> = ({

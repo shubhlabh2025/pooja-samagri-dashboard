@@ -10,7 +10,7 @@ interface CategoriesModalProps {
   onSave: (ids: string[]) => void;
 }
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 50;
 const DEBOUNCE_MS = 200;
 
 const CategoriesModal: React.FC<CategoriesModalProps> = ({
