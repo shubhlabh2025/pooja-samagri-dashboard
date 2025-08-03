@@ -37,7 +37,7 @@ const OrderStatusUpdateCard = ({ orderDetails }: OrderDetailMainCardProps) => {
           id: selectedOrderId,
           status: selectedAction,
           comment,
-        }),
+        })
       );
       setShowDialog(false);
       navigate(0); // Refresh page
@@ -107,10 +107,22 @@ const OrderStatusUpdateCard = ({ orderDetails }: OrderDetailMainCardProps) => {
               Current Status: {orderDetails.status}
             </p>
             {orderDetails.payment_details.status == "created" ? (
-              <div>
+              <div className="flex flex-row gap-2">
                 <span className="p-3 bg-red-500 text-white rounded-2xl font-medium text-[12px]">
                   Payment Failed
                 </span>
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedOrderId(orderDetails.id);
+                    setSelectedAction("accepted");
+                    setShowDialog(true);
+                  }}
+                >
+                  <span className="p-3 bg-green-500 text-white rounded-2xl font-medium text-[12px]">
+                    Payment Received
+                  </span>
+                </div>
               </div>
             ) : (
               <div className="flex gap-2">
@@ -142,7 +154,7 @@ const OrderStatusUpdateCard = ({ orderDetails }: OrderDetailMainCardProps) => {
         } Order`}
         title={`Are you sure you want to ${selectedAction.replace(
           /_/g,
-          " ",
+          " "
         )} this order?`}
         confirmLabel={isLoading ? "Saving..." : "Submit"}
         cancelLabel="Dismiss"
