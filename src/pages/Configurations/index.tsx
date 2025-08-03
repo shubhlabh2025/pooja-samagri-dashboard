@@ -28,7 +28,7 @@ const configurationSchema = z.object({
         image: z.string().url("Valid image URL required"),
         action: z.string(),
         type: z.string(),
-      }),
+      })
     )
     .optional(),
 });
@@ -117,7 +117,7 @@ const ConfigurationSection = () => {
 
   const updateField = <K extends keyof ConfigurationFormData>(
     field: K,
-    value: ConfigurationFormData[K],
+    value: ConfigurationFormData[K]
   ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -325,6 +325,8 @@ const ConfigurationSection = () => {
                   <option value="">Select Screen</option>
                   <option value="home">HOME</option>
                   <option value="category">CATEGORY</option>
+                  <option value="mobileHome">MOBILE HOME</option>
+                  <option value="mobileCategory">MOBILE CATEGORY</option>
                 </select>
 
                 {/* ⬇ Submit */}
