@@ -34,17 +34,17 @@ export const sendOtp = createAsyncThunk(
       toast.error(error.response?.data?.message);
 
       return rejectWithValue(
-        error.response?.data?.message || "Failed to send OTP",
+        error.response?.data?.message || "Failed to send OTP"
       );
     }
-  },
+  }
 );
 
 export const verifyOtp = createAsyncThunk(
   "auth/verifyOtp",
   async (
     { phoneNumber, otpCode }: { phoneNumber: string; otpCode: string },
-    { rejectWithValue },
+    { rejectWithValue }
   ) => {
     try {
       const response = await authApi.verifyOtp({
@@ -52,10 +52,11 @@ export const verifyOtp = createAsyncThunk(
         otp_code: otpCode,
       });
 
-      const { access_token } = response.data.data;
+      const { access_token, refresh_token } = response.data.data;
 
       // ✅ Save token to localStorage
       localStorage.setItem("accessToken", access_token);
+      localStorage.setItem("refreshToken", refresh_token);
 
       return {
         phoneNumber,
@@ -66,10 +67,10 @@ export const verifyOtp = createAsyncThunk(
       toast.error(error.response?.data?.message);
 
       return rejectWithValue(
-        error.response?.data?.message || "Failed to verify OTP",
+        error.response?.data?.message || "Failed to verify OTP"
       );
     }
-  },
+  }
 );
 
 const authSlice = createSlice({

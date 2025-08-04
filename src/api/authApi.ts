@@ -22,6 +22,7 @@ export interface AuthResponse {
 export const createAuthApi = (client: AxiosInstance) => ({
   sendOtp: (payload: SendOtpPayload) =>
     client.post<AuthResponse>("/auth/otp", payload),
+  
 
   verifyOtp: (payload: VerifyOtpPayload) =>
     client.post<AuthResponse>("/auth/verify", payload),
