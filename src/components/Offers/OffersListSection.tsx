@@ -34,7 +34,7 @@ const OffersListSection: React.FC = () => {
 
   useEffect(() => {
     dispatch(
-      fetchCoupons({ page: currentPage, pageSize: PAGE_SIZE, q: query }),
+      fetchCoupons({ page: currentPage, pageSize: PAGE_SIZE, q: query })
     );
   }, [dispatch, currentPage, query]);
 
@@ -139,7 +139,9 @@ const OffersListSection: React.FC = () => {
             <div className="flex gap-2">
               <button
                 className="text-red-600 hover:text-red-800"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   setSelectedCouponId(coupon.id);
                   setShowDialog(true);
                 }}
