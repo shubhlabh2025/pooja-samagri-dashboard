@@ -5,4 +5,5 @@ export interface User {
   first_name?: string | null;
   last_name?: string | null;
   gender?: string | null;
+  createdAt?: string;
 }

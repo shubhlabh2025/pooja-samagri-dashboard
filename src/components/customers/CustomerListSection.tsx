@@ -8,6 +8,7 @@ import {
   selectUserStatus,
 } from "@/slices/userSlice";
 import userAvatar from "../../assets/user.png";
+import { formatDate } from "@/utils/Utils";
 
 const DEBOUNCE_MS = 300;
 
@@ -25,7 +26,7 @@ const CustomerListSection: React.FC = () => {
 
   useEffect(() => {
     dispatch(
-      fetchUsers({ page: currentPage, pageSize: 10, phone_number: query }),
+      fetchUsers({ page: currentPage, pageSize: 10, phone_number: query })
     );
   }, [dispatch, currentPage, query]);
 
@@ -40,7 +41,7 @@ const CustomerListSection: React.FC = () => {
 
   const totalPages = pagination?.totalPages || 1;
   const pageButtons = [...Array(Math.min(5, totalPages)).keys()].map(
-    (i) => i + 1,
+    (i) => i + 1
   );
 
   return (
@@ -77,7 +78,7 @@ const CustomerListSection: React.FC = () => {
                 <Link
                   to={`/customerDetails/${user.phone_number.replace(
                     "+91",
-                    "",
+                    ""
                   )}`}
                   key={user.id}
                 >
@@ -93,7 +94,7 @@ const CustomerListSection: React.FC = () => {
                           {user.first_name || user.phone_number || "Unnamed"}
                         </div>
                         <div className="text-xs text-gray-500 truncate max-w-[200px]">
-                          9 order(s), Total Amount - Rs. 3999
+                          {formatDate(user.createdAt || "")}
                           {/* Replace with real order count/amount if available */}
                         </div>
                       </div>
