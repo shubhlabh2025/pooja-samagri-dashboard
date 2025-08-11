@@ -104,7 +104,7 @@ const OrderDetailSection: React.FC = () => {
       {orderDetails && <OrderItemSummaryCard orderDetails={orderDetails} />}
 
       {orderDetails && <PaymentSummaryCard orderDetails={orderDetails} />}
-      {orderDetails?.status === "delivered" ? (
+      {orderDetails?.status !== "pending" ? (
         <button
           onClick={downloadInvoice}
           className="w-full mt-4 bg-[#2480ff] text-white font-bold py-2 rounded shadow"
