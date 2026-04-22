@@ -15,6 +15,7 @@ import UpdateProductForm from "@/pages/Product/UpdateProductForm";
 import OffersPage from "@/pages/Configurations/OffersPage";
 import CreateOfferPage from "@/pages/Configurations/CreateOfferPage";
 import UpdateOfferPage from "@/pages/Configurations/UpdateOfferPage";
+import NotificationsPage from "@/pages/Notifications";
 
 const AppRoutes = () => (
   <Routes>
@@ -124,6 +125,14 @@ const AppRoutes = () => (
       element={
         <DashboardLayout>
           <UpdateOfferPage />
+        </DashboardLayout>
+      }
+    />
+    <Route
+      path="/notifications"
+      element={
+        <DashboardLayout>
+          <NotificationsPage />
         </DashboardLayout>
       }
     />
