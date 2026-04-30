@@ -39,6 +39,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onLinkClick }) => {
           Customers
         </Link>
         <Link
+          to="/analytics"
+          className="block px-4 py-2 hover:bg-gray-700"
+          onClick={onLinkClick}
+        >
+          Sales Analytics
+        </Link>
+        <Link
           to="/notifications"
           className="block px-4 py-2 hover:bg-gray-700"
           onClick={onLinkClick}

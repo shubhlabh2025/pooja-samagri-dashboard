@@ -40,9 +40,40 @@ const CustomerListSection: React.FC = () => {
   }, [searchText]);
 
   const totalPages = pagination?.totalPages || 1;
-  const pageButtons = [...Array(Math.min(5, totalPages)).keys()].map(
-    (i) => i + 1
-  );
+
+  // If totalPages shrinks (e.g. after a search) and currentPage no longer
+  // exists, clamp back to the last valid page.
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  // Sliding window of up to 5 page numbers around the current page.
+  // Adds first/last + ellipsis when there's a gap.
+  const buildPageItems = (): (number | "...")[] => {
+    const window = 5;
+    if (totalPages <= window) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const half = Math.floor(window / 2);
+    let start = Math.max(2, currentPage - half);
+    let end = Math.min(totalPages - 1, currentPage + half);
+
+    // Keep window size constant when near edges.
+    if (currentPage - half < 2) end = Math.min(totalPages - 1, start + window - 3);
+    if (currentPage + half > totalPages - 1)
+      start = Math.max(2, end - (window - 3));
+
+    const items: (number | "...")[] = [1];
+    if (start > 2) items.push("...");
+    for (let i = start; i <= end; i++) items.push(i);
+    if (end < totalPages - 1) items.push("...");
+    items.push(totalPages);
+    return items;
+  };
+
+  const pageItems = buildPageItems();
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -115,19 +146,28 @@ const CustomerListSection: React.FC = () => {
               >
                 Prev
               </button>
-              {pageButtons.map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1 rounded ${
-                    currentPage === page
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
+              {pageItems.map((item, idx) =>
+                item === "..." ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="px-2 py-1 text-gray-400 select-none"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setCurrentPage(item)}
+                    className={`px-3 py-1 rounded ${
+                      currentPage === item
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
               <button
                 onClick={() =>
                   setCurrentPage(Math.min(totalPages, currentPage + 1))

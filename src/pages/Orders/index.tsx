@@ -58,7 +58,7 @@ const DashboardPage: FC = () => {
     const params = {
       status: statusMap[tabKey],
       page,
-      pageSize: 10,
+      pageSize: 20,
       order_number: query,
     };
     try {
