@@ -63,10 +63,13 @@ const SalesChart = ({ data, metric }: Props) => {
               allowDecimals={false}
             />
             <Tooltip
-              labelFormatter={(label: string) => formatShortDate(label)}
-              formatter={(value: number) =>
-                isRevenue ? formatINR(value) : formatNumber(value)
+              labelFormatter={(label) =>
+                typeof label === "string" ? formatShortDate(label) : String(label)
               }
+              formatter={(value) => {
+                const n = Number(value);
+                return isRevenue ? formatINR(n) : formatNumber(n);
+              }}
               contentStyle={{ borderRadius: 8, fontSize: 13 }}
             />
             <Legend wrapperStyle={{ fontSize: 13 }} />
