@@ -72,13 +72,19 @@ const OrderStatusUpdateCard = ({ orderDetails }: OrderDetailMainCardProps) => {
       case "shipped":
         return [
           {
+            label: "Cancel",
+            value: "cancelled",
+            color: "bg-red-500",
+          },
+          {
             label: "Out for Delivery",
             value: "out_for_delivery",
             color: "bg-yellow-500",
-          },
+          }
         ];
       case "out_for_delivery":
         return [
+          { label: "Cancel", value: "cancelled", color: "bg-red-500" },
           {
             label: "Mark as Delivered",
             value: "delivered",
@@ -149,9 +155,8 @@ const OrderStatusUpdateCard = ({ orderDetails }: OrderDetailMainCardProps) => {
 
       <CommentDialog
         open={showDialog}
-        heading={`${
-          selectedAction.charAt(0).toUpperCase() + selectedAction.slice(1)
-        } Order`}
+        heading={`${selectedAction.charAt(0).toUpperCase() + selectedAction.slice(1)
+          } Order`}
         title={`Are you sure you want to ${selectedAction.replace(
           /_/g,
           " "
