@@ -45,9 +45,9 @@ const OrderAcceptReject: FC<Props> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [selectedAction, setSelectedAction] = useState<"accepted" | "rejected">(
-    "accepted"
-  );
+  const [selectedAction, setSelectedAction] = useState<
+    "accepted" | "rejected" | "cancelled"
+  >("accepted");
 
   const dispatch = useAppDispatch();
 
@@ -135,23 +135,28 @@ const OrderAcceptReject: FC<Props> = ({
               </div>
               {order.payment_details.status == "created" ? (
                 <div className="flex flex-row gap-2">
-                  <div>
-                    <span className="p-3 bg-red-500 text-white rounded-2xl font-medium text-[12px]">
-                      Payment Failed
-                    </span>
-                  </div>
-                  <div
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedOrderId(order.id);
+                      setSelectedAction("cancelled");
+                      setShowDialog(true);
+                    }}
+                    className="p-3 bg-red-500 text-white rounded-2xl font-medium text-[12px] hover:shadow-md cursor-pointer"
+                  >
+                    Payment Failed
+                  </button>
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedOrderId(order.id);
                       setSelectedAction("accepted");
                       setShowDialog(true);
                     }}
+                    className="p-3 bg-green-500 text-white rounded-2xl font-medium text-[12px] hover:shadow-md cursor-pointer"
                   >
-                    <span className="p-3 bg-green-500 text-white rounded-2xl font-medium text-[12px]">
-                      Payment Received
-                    </span>
-                  </div>
+                    Payment Received
+                  </button>
                 </div>
               ) : (
                 <div className="flex gap-2">
