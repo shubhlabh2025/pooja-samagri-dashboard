@@ -44,12 +44,12 @@ export interface orderItem {
   quantity: number;
   mrp: number;
   price: number;
-  product_variant_id: string;
+  product_variant_id: string | null;
   product_variant: {
     name: string;
     images: string[];
     display_label: string;
-  };
+  } | null;
 }
 export interface OrderDetail {
   id: string;
