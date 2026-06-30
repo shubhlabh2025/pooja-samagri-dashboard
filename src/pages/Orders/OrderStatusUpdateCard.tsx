@@ -117,7 +117,8 @@ const OrderStatusUpdateCard = ({ orderDetails }: OrderDetailMainCardProps) => {
             <p className="text-[14px] leading-4 font-semibold text-[#212121]">
               Current Status: {orderDetails.status}
             </p>
-            {orderDetails.payment_details.status == "created" ? (
+            {orderDetails.payment_details.status == "created" &&
+            orderDetails.status === "pending" ? (
               <div className="flex flex-row gap-2">
                 <button
                   onClick={(e) => {
